@@ -137,4 +137,85 @@
       }
       return string; // Fallback
     }
+
+
+    // Fixed Hash Function to work on both Local file:// and HTTPS
+    async function hashData(string) {
+      try {
+          if (window.crypto && window.crypto.subtle) {
+              const utf8 = new TextEncoder().encode(string);
+              const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
+              const hashArray = Array.from(new Uint8Array(hashBuffer));
+              return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('');
+          }
+      } catch (e) { console.warn("crypto.subtle not available, falling back to CryptoJS"); }
+      
+      if (typeof CryptoJS !== 'undefined') {
+          return CryptoJS.SHA256(string).toString(CryptoJS.enc.Hex);
+      }
+      return string; // Fallback
+    }
+    
+    // ---------------------------------------------------------
+    // නව Vercel API එක හා සම්බන්ධ වන කේතය මෙතැනින් අලවන්න
+    // ---------------------------------------------------------
+
+    window.fetchAndCalculateClassMarks = async function(yr, trm, cls) {
+        try {
+            // ඔබගේ දත්ත ලබාගැනීමේ පැරණි Firebase/Cache කේතය
+            let [allStudentsData, allClassesData, marksDB, allSubjectsData] = await Promise.all([
+                fetchWithCache('students'),
+                fetchWithCache('classes'),
+                fetchWithCache(`marks/${yr}/${trm}`),
+                fetchWithCache('subjects')
+            ]);
+
+            if (!allStudentsData || !marksDB || !allClassesData) {
+                throw new Error("Missing required data");
+            }
+
+            // එම පන්තියට අදාළ ළමුන්ගේ ලකුණු පමණක් වෙන් කරගැනීම
+            let classStsKeys = Object.keys(allStudentsData).filter(k => allStudentsData[k].class === cls);
+            let rawData = classStsKeys.map(k => {
+                let sData = { admNo: k, ...allStudentsData[k] };
+                sData.marks = marksDB[k] || {}; 
+                return sData;
+            });
+
+            let isALevelReport = allClassesData[cls] && (allClassesData[cls].grade === '12' || allClassesData[cls].grade === '13');
+            let ctName = allClassesData[cls] ? allClassesData[cls].classTeacherName : "";
+            let displayCols = {}; 
+
+            // Vercel API එකට දත්ත යවා ගණනය කරවා ගැනීම
+            const response = await fetch('/api/processMarks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    rawData: rawData, 
+                    isALevelReport: isALevelReport 
+                }) 
+            });
+
+            // සර්වර් එකෙන් යම් දෝෂයක් ආවොත් එය පෙන්වීම
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status} - Could not calculate marks.`);
+            }
+
+            // Backend එකෙන් ආපසු එවන සකසන ලද ප්‍රතිඵල (JSON) ලබා ගැනීම
+            const result = await response.json(); 
+
+            return {
+                reportArray: result.reportArray,  
+                displayCols: displayCols,
+                isALevelReport: result.isALevelReport,
+                ctName: ctName
+            };
+
+        } catch (error) {
+            console.error("Error calculating marks via API:", error);
+            throw error;
+        }
+    };
   
