@@ -2478,15 +2478,15 @@ async function generateClassMasterReport() {
 
 
  // ==========================================
-  // PDF & CSV EXPORT (NATIVE IFRAME PRINT METHOD)
+  // PDF & CSV EXPORT 
   // ==========================================
-  window.downloadReportPDF = function() {
+    window.downloadReportPDF = function() {
     const data = window.currentReportData; if (!data) return alert("No report generated.");
     const schoolName = "R/Gankanda Central College"; 
     
-    // --- Hidden Iframe එකක් භාවිතා කිරීම ---
+    // --- MOBILE FIX: Popup වෙනුවට Hidden Iframe එකක් භාවිතා කිරීම ---
     let oldIframe = document.getElementById('mobilePrintFrame');
-    if (oldIframe) { oldIframe.remove(); } 
+    if (oldIframe) { oldIframe.remove(); } // කලින් Iframe එකක් ඇත්නම් එය ඉවත් කිරීම
 
     let iframe = document.createElement('iframe');
     iframe.id = 'mobilePrintFrame';
@@ -2581,8 +2581,10 @@ async function generateClassMasterReport() {
                     });
                 });
                 
+                // වගු දෙක වෙන්ව දකුණු පසින් පෙන්වීම සඳහා Flex Container එක ආරම්භ කිරීම
                 finalHtml += `<div style="display: flex; gap: 40px; page-break-inside: avoid; margin-top: 30px; margin-bottom: 25px; align-items: flex-start;">`;
                 
+                // 1. Subject-wise Grade Summary (වම් පස වගුව)
                 finalHtml += `<div style="flex: 1;">
                               <h3 style="margin:0 0 10px 0; font-size:14px; text-transform:uppercase;">Subject-wise Grade Summary</h3>
                               <table class="official-table" style="margin-top:0; width:auto;">
@@ -2605,6 +2607,7 @@ async function generateClassMasterReport() {
                 
                 finalHtml += `</tbody></table></div>`;
                 
+                // 2. Pass Summary (දකුණු පස වගුව - Grade 10,11,12,13 සඳහා පමණි)
                 if(data.extraStats) {
                      let getScore = (str) => { let s = 0; str.split(' ').forEach(p => { let c=parseInt(p.replace(/[^0-9]/g, ''))||0; if(p.includes('A'))s+=c*10000; if(p.includes('B'))s+=c*1000; if(p.includes('C'))s+=c*100; if(p.includes('S'))s+=c*10; if(p.includes('W'))s-=c*10;}); return s; };
                      let allCombos = Array.from(new Set([...Object.keys(data.extraStats.classCombos), ...Object.keys(data.extraStats.secCombos)])).sort((a,b) => getScore(b) - getScore(a));
@@ -2622,7 +2625,9 @@ async function generateClassMasterReport() {
                      finalHtml += `</tbody></table></div>`;
                 }
                 
+                // Flex Container එක අවසන් කිරීම
                 finalHtml += `</div>`;
+                
                 finalHtml += `<div class="signature-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div></div>`;
             }
             finalHtml += `</div>`;
@@ -2811,54 +2816,57 @@ async function generateClassMasterReport() {
         finalHtml += `</tbody></table>
         <div class="sig-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher</div></div>
         </body></html>`;
+        
         printWindow.document.write(finalHtml);
     }
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
+        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
+        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
 
-        let finalHtml = `<html><head><style>${commonStyles} 
-        .w-grade { color: #dc2626 !important; font-weight:900;} 
-        .s-grade { color: #d97706 !important; font-weight:bold;}
-        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
-        </style></head><body>
-        <div class="header">
-            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
-            <div style="text-align:left;">
-                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
-                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
-            </div>
-        </div>`;
+        let finalHtml = `<html><head><style>${commonStyles} 
+        .w-grade { color: #dc2626 !important; font-weight:900;} 
+        .s-grade { color: #d97706 !important; font-weight:bold;}
+        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
+        </style></head><body>
+        <div class="header">
+            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
+            <div style="text-align:left;">
+                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
+                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
+            </div>
+        </div>`;
 
-        finalHtml += `<div style="margin-bottom:20px; width:60%;">
-            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
-            <table class="stat-table">
-            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (< 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
-        
-        Object.keys(data.subjectStats).forEach(sub => {
-            let stat = data.subjectStats[sub];
-            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
-        });
-        finalHtml += `</tbody></table></div>`;
+        finalHtml += `<div style="margin-bottom:20px; width:60%;">
+            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
+            <table class="stat-table">
+            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (< 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
+        
+        Object.keys(data.subjectStats).forEach(sub => {
+            let stat = data.subjectStats[sub];
+            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
+        });
+        finalHtml += `</tbody></table></div>`;
 
-        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
+        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
 
-        data.students.forEach(s => {
-            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
-            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
-        });
-        
-        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
-        finalHtml += `</tbody></table>
+        data.students.forEach(s => {
+            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
+            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
+        });
+        
+        // --- වෙනස් කළ කොටස: Signatures සඳහා Flexbox Space-between භාවිත කිරීම ---
+        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
+        finalHtml += `</tbody></table>
             <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                 <div class="sig-box" style="text-align: left;"><div class="sig-line"></div>${leftSigText}</div>
                 <div class="sig-box" style="text-align: right;"><div class="sig-line"></div>Principal / Vice Principal</div>
             </div>
         </body></html>`;
-        printWindow.document.write(finalHtml);
-    }
-
-    // --- PDF නාමය වෙනස් කිරීම සහ Native Print Window එක විවෘත කිරීම ---
+        // -------------------------------------------------------------------------
+        
+        printWindow.document.write(finalHtml);
+    }
+    // --- PDF නාමය වෙනස් කිරීමේ ස්ථිරසාර ක්‍රමය (Strict Overwrite) ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
     let safeClassName = (data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
@@ -2866,6 +2874,7 @@ async function generateClassMasterReport() {
     
     printWindow.document.close(); 
     
+    // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
     let frameTitleTag = printWindow.document.querySelector('title');
     if (frameTitleTag) {
         frameTitleTag.innerText = fileName;
@@ -2875,20 +2884,20 @@ async function generateClassMasterReport() {
         printWindow.document.head.appendChild(newTitle);
     }
 
+    // 2. ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
     let originalTitle = document.title;
     document.title = fileName;
     
+    // බ්‍රවුසරයට නම වෙනස් කරගැනීමට මදක් වැඩිපුර කාලයක් (තත්පර 1ක්) ලබා දී Print කිරීම
     setTimeout(() => { 
         printWindow.focus();
-        printWindow.print(); // මෙය මගින් බ්‍රව්සරයේ Print කොටුව පැමිණේ (Save as PDF කළ හැක)
+        printWindow.print(); 
         
+        // Print තිරය පැමිණි පසු නැවත පරණ නම යථා තත්ත්වයට පත් කිරීම
         setTimeout(() => { document.title = originalTitle; }, 2000);
     }, 1000);
   }
 
-  // ==========================================
-  // CSV EXPORT 
-  // ==========================================
   window.exportReportToCSV = function() {
     const data = window.currentReportData; if (!data) return alert("No report generated.");
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -2976,9 +2985,7 @@ async function generateClassMasterReport() {
     document.body.removeChild(link);
   }
 
-  // ==========================================
-  // INITIALIZATION & FIREBASE AUTH
-  // ==========================================
+  // INITIALIZATION
   firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
           let email = user.email;
@@ -3003,10 +3010,10 @@ async function generateClassMasterReport() {
           document.getElementById('loginBox').style.display = 'flex';
       }
   });
+  // ==========================================
+  // CUSTOM ERROR HANDLING (නව කේත කොටස)
+  // ==========================================
 
-  // ==========================================
-  // CUSTOM ERROR HANDLING & VALIDATION
-  // ==========================================
   window.showErrorAlert = function(message) {
       const errorDiv = document.getElementById("error-message-box");
       if (!errorDiv) return;
@@ -3019,21 +3026,33 @@ async function generateClassMasterReport() {
       errorDiv.style.border = "1px solid #fecaca";
       errorDiv.style.borderRadius = "8px";
       
-      setTimeout(() => { errorDiv.style.display = "none"; }, 6000);
+      // තත්පර 6කින් පසු Error එක ස්වයංක්‍රීයව මැකී යාමට සැලැස්වීම (අවශ්‍ය නම් පමණක්)
+      setTimeout(() => {
+          errorDiv.style.display = "none";
+      }, 6000);
   };
-
+  // --- Real-time Mark Validation Function ---
   window.validateMarkInput = function(input) {
       let val = input.value.toUpperCase();
+      
+      // 'A' සහ 'B' අකුරු දෙක හැර වෙනත් ඉංග්‍රීසි අකුරු සහ සංකේත මැකීම (Numbers පමණක් ඉතිරි කිරීම)
       if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
-          input.value = val.replace(/[^0-9]/g, ''); 
+          input.value = val.replace(/[^0-9]/g, ''); // අංක පමණක් ඉතිරි කරයි
       }
+
+      // 100 ට වඩා වැඩිනම් ස්වයංක්‍රීයව 100 බවට පත් කිරීම
       if (input.value !== "") {
           let numMark = Number(input.value);
           if (!isNaN(numMark)) {
-              if (numMark > 100) input.value = 100; 
-              else if (numMark < 0) input.value = 0;
+              if (numMark > 100) {
+                  input.value = 100; 
+              } else if (numMark < 0) {
+                  input.value = 0;
+              }
           }
       }
+      
+      // Type කරනකොට Highlight වෙලා තියෙන රතු පාට අයින් කිරීම
       input.style.borderColor = "var(--primary)";
       input.style.backgroundColor = "#eff6ff";
   };
@@ -3041,8 +3060,11 @@ async function generateClassMasterReport() {
   window.fetchStudentReport = async function() {
       try {
           // ඔබගේ දත්ත ලබා ගැනීමේ කේතය මෙහි ලියන්න
+          // උදාහරණ: let data = await apiCall('students/' + admNo);
+
       } catch (error) {
           let userFriendlyMessage = "A system error occurred. Please try again."; 
+
           if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('Access Denied'))) {
               userFriendlyMessage = "You do not have permission to view data for this class. Please contact the system administrator.";
           } 
@@ -3052,6 +3074,8 @@ async function generateClassMasterReport() {
           else if (error.message && (error.message.includes('null') || error.message.includes('not found'))) {
               userFriendlyMessage = "Marks have not been entered for this student yet.";
           }
+
+          // UI එකේ Error එක පෙන්වීම
           showErrorAlert(userFriendlyMessage);
       }
   };
