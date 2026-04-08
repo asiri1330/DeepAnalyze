@@ -2478,13 +2478,27 @@ async function generateClassMasterReport() {
 
 
  // ==========================================
-  // PDF & CSV EXPORT (NEW HTML2PDF METHOD)
+  // PDF & CSV EXPORT (NATIVE IFRAME PRINT METHOD)
   // ==========================================
   window.downloadReportPDF = function() {
-    const data = window.currentReportData; 
-    if (!data) return alert("No report generated.");
+    const data = window.currentReportData; if (!data) return alert("No report generated.");
     const schoolName = "R/Gankanda Central College"; 
+    
+    // --- Hidden Iframe එකක් භාවිතා කිරීම ---
+    let oldIframe = document.getElementById('mobilePrintFrame');
+    if (oldIframe) { oldIframe.remove(); } 
 
+    let iframe = document.createElement('iframe');
+    iframe.id = 'mobilePrintFrame';
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+    
+    const printWindow = iframe.contentWindow;
+    // ---------------------------------------------------------------
+    
     // පන්තිය සහ පන්තිභාර ගුරුතුමාගේ නම ලබා ගැනීම
     let repClass = data.cls || data.targetName || data.target || "";
     let repTeacher = data.ctName || (repClass && allClassesData[repClass] ? allClassesData[repClass].teacher : "..........................");
@@ -2504,16 +2518,11 @@ async function generateClassMasterReport() {
     .sig-box { text-align: center; width: 200px; font-weight: bold; font-size: 11px;} 
     .sig-line { border-top: 1px dashed #000; margin-bottom: 5px; width: 100%; }`;
 
-    let finalHtmlContent = ""; // මුළු HTML කේතය රඳවා තබා ගන්නා විචල්‍යය
-    let pdfOrientation = 'portrait'; // html2pdf සඳහා මුල් පිහිටීම
-
     if(data.type === 'Class') {
-        const isLandscape = data.displayCols.length > 8; 
-        pdfOrientation = isLandscape ? 'landscape' : 'portrait'; 
-        const studentsPerPage = isLandscape ? 30 : 40; 
+        const isLandscape = data.displayCols.length > 8; const orientation = isLandscape ? 'landscape' : 'portrait'; const studentsPerPage = isLandscape ? 30 : 40; 
         
         let reportStyles = `<style>
-        @page { size: A4 ${pdfOrientation}; margin: 10mm; } 
+        @page { size: A4 ${orientation}; margin: 10mm; } 
         * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
         body { background: transparent; margin: 0; text-transform: capitalize;} 
         .page-break { page-break-after: always; } 
@@ -2573,6 +2582,7 @@ async function generateClassMasterReport() {
                 });
                 
                 finalHtml += `<div style="display: flex; gap: 40px; page-break-inside: avoid; margin-top: 30px; margin-bottom: 25px; align-items: flex-start;">`;
+                
                 finalHtml += `<div style="flex: 1;">
                               <h3 style="margin:0 0 10px 0; font-size:14px; text-transform:uppercase;">Subject-wise Grade Summary</h3>
                               <table class="official-table" style="margin-top:0; width:auto;">
@@ -2611,13 +2621,13 @@ async function generateClassMasterReport() {
                      });
                      finalHtml += `</tbody></table></div>`;
                 }
+                
                 finalHtml += `</div>`;
                 finalHtml += `<div class="signature-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div></div>`;
             }
             finalHtml += `</div>`;
         }
-        finalHtml += `</body></html>`; 
-        finalHtmlContent = finalHtml;
+        finalHtml += `</body></html>`; printWindow.document.write(finalHtml);
     } 
     else if(data.type === 'Subject') {
         let finalHtml = `<html><head><style>${commonStyles}</style></head><body>
@@ -2625,7 +2635,7 @@ async function generateClassMasterReport() {
         <table><thead><tr><th>Adm No</th><th>Student Name</th><th>Marks</th><th>Grade</th></tr></thead><tbody>`;
         data.students.forEach(s => { finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td style="width:100%;">${s.name}</td><td>${s.mark}</td><td>${s.grade}</td></tr>`; });
         finalHtml += `</tbody></table><div class="sig-section"><div class="sig-box"><div class="sig-line"></div>Subject Teacher</div></div></body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if(data.type === 'TopClass' || data.type === 'TopSection') {
         let title = data.type === 'TopClass' ? "Class Top Students" : "Grade Top Students";
@@ -2637,7 +2647,7 @@ async function generateClassMasterReport() {
         <table><thead><tr><th style="width:1%;">Rank</th><th style="width:1%;">Adm No</th><th style="width:99%;">Student Name</th>${data.type === 'TopSection' ? '<th>Class</th>' : ''}<th>${data.isALevel ? 'Z-Score' : 'Average'}</th><th>Total</th></tr></thead><tbody>`;
         data.students.forEach(s => { let rnk = data.type === 'TopSection' ? s.sectionRank : s.rank; finalHtml += `<tr><td>${rnk}</td><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'TopSection' ? `<td>${s.className}</td>` : ''}<td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.total}</td></tr>`; });
         finalHtml += `</tbody></table><div class="sig-section"><div class="sig-box"><div class="sig-line"></div>${sigText}</div></div></body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if(data.type === 'IndividualCards') {
         let finalHtml = `<html><head><style>
@@ -2668,8 +2678,7 @@ async function generateClassMasterReport() {
             
             finalHtml += `</tbody></table><div class="summary"><span>Total Marks: ${s.total}</span><span>${data.isALevel ? 'Z-Score: '+s.overallZ : 'Average: '+s.average}</span><span>Class Rank: ${s.rank}</span></div><div class="signatures"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div><div class="sig-box"><div class="sig-line"></div>Parent / Guardian</div></div></div>`;
         });
-        finalHtml += `</body></html>`; 
-        finalHtmlContent = finalHtml;
+        finalHtml += `</body></html>`; printWindow.document.write(finalHtml);
     }
     else if (data.type === 'PassesSummaryClass' || data.type === 'PassesSummarySection') {
         let title = data.type === 'PassesSummaryClass' ? "Pass Summary (Class)" : "Pass Summary (Grade)";
@@ -2686,7 +2695,7 @@ async function generateClassMasterReport() {
             finalHtml += `</tbody></table>`;
         });
         finalHtml += `</body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if (data.type === 'Prediction') {
         let finalHtml = `<html><head><style>${commonStyles}</style></head><body>
@@ -2704,7 +2713,7 @@ async function generateClassMasterReport() {
             finalHtml += `<td>${s.avg}</td></tr>`;
         });
         finalHtml += `</tbody></table></body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if (data.type === 'ALPrediction') {
         let finalHtml = `<html><head><style>
@@ -2765,7 +2774,7 @@ async function generateClassMasterReport() {
             <div class="sig-box"><div class="sig-line"></div>Principal</div>
         </div>
         </body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if (data.type === 'ClassStudentList') {
         let finalHtml = `<html><head><style>${commonStyles}</style></head><body>
@@ -2802,7 +2811,7 @@ async function generateClassMasterReport() {
         finalHtml += `</tbody></table>
         <div class="sig-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher</div></div>
         </body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
         let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
@@ -2846,30 +2855,40 @@ async function generateClassMasterReport() {
                 <div class="sig-box" style="text-align: right;"><div class="sig-line"></div>Principal / Vice Principal</div>
             </div>
         </body></html>`;
-        finalHtmlContent = finalHtml;
+        printWindow.document.write(finalHtml);
     }
 
-    // ========================================================
-    // අලුත් HTML2PDF ක්‍රියාත්මක කිරීම (PDF ජනනය සහ බාගත කිරීම)
-    // ========================================================
-    
+    // --- PDF නාමය වෙනස් කිරීම සහ Native Print Window එක විවෘත කිරීම ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
     let safeClassName = (data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
     let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`.replace(/\s+/g, '_');
     
-    const opt = {
-        margin:       10, 
-        filename:     fileName + '.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true }, 
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: pdfOrientation },
-        pagebreak:    { mode: ['css', 'legacy'] } 
-    };
+    printWindow.document.close(); 
+    
+    let frameTitleTag = printWindow.document.querySelector('title');
+    if (frameTitleTag) {
+        frameTitleTag.innerText = fileName;
+    } else {
+        let newTitle = printWindow.document.createElement('title');
+        newTitle.innerText = fileName;
+        printWindow.document.head.appendChild(newTitle);
+    }
 
-    html2pdf().set(opt).from(finalHtmlContent).save();
+    let originalTitle = document.title;
+    document.title = fileName;
+    
+    setTimeout(() => { 
+        printWindow.focus();
+        printWindow.print(); // මෙය මගින් බ්‍රව්සරයේ Print කොටුව පැමිණේ (Save as PDF කළ හැක)
+        
+        setTimeout(() => { document.title = originalTitle; }, 2000);
+    }, 1000);
   }
 
+  // ==========================================
+  // CSV EXPORT 
+  // ==========================================
   window.exportReportToCSV = function() {
     const data = window.currentReportData; if (!data) return alert("No report generated.");
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -2957,7 +2976,9 @@ async function generateClassMasterReport() {
     document.body.removeChild(link);
   }
 
-  // INITIALIZATION
+  // ==========================================
+  // INITIALIZATION & FIREBASE AUTH
+  // ==========================================
   firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
           let email = user.email;
@@ -2984,7 +3005,7 @@ async function generateClassMasterReport() {
   });
 
   // ==========================================
-  // CUSTOM ERROR HANDLING
+  // CUSTOM ERROR HANDLING & VALIDATION
   // ==========================================
   window.showErrorAlert = function(message) {
       const errorDiv = document.getElementById("error-message-box");
@@ -2998,30 +3019,21 @@ async function generateClassMasterReport() {
       errorDiv.style.border = "1px solid #fecaca";
       errorDiv.style.borderRadius = "8px";
       
-      setTimeout(() => {
-          errorDiv.style.display = "none";
-      }, 6000);
+      setTimeout(() => { errorDiv.style.display = "none"; }, 6000);
   };
 
-  // --- Real-time Mark Validation Function ---
   window.validateMarkInput = function(input) {
       let val = input.value.toUpperCase();
-      
       if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
           input.value = val.replace(/[^0-9]/g, ''); 
       }
-
       if (input.value !== "") {
           let numMark = Number(input.value);
           if (!isNaN(numMark)) {
-              if (numMark > 100) {
-                  input.value = 100; 
-              } else if (numMark < 0) {
-                  input.value = 0;
-              }
+              if (numMark > 100) input.value = 100; 
+              else if (numMark < 0) input.value = 0;
           }
       }
-      
       input.style.borderColor = "var(--primary)";
       input.style.backgroundColor = "#eff6ff";
   };
@@ -3031,7 +3043,6 @@ async function generateClassMasterReport() {
           // ඔබගේ දත්ත ලබා ගැනීමේ කේතය මෙහි ලියන්න
       } catch (error) {
           let userFriendlyMessage = "A system error occurred. Please try again."; 
-
           if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('Access Denied'))) {
               userFriendlyMessage = "You do not have permission to view data for this class. Please contact the system administrator.";
           } 
@@ -3041,7 +3052,6 @@ async function generateClassMasterReport() {
           else if (error.message && (error.message.includes('null') || error.message.includes('not found'))) {
               userFriendlyMessage = "Marks have not been entered for this student yet.";
           }
-
           showErrorAlert(userFriendlyMessage);
       }
   };
