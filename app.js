@@ -218,4 +218,28 @@
             throw error;
         }
     };
+
+    // PDF එක බාගත කිරීමේ ශ්‍රිතය
+window.downloadReportPDF = function() {
+    
+    // PDF බවට පත් කළ යුතු ප්‍රධාන HTML කොටස (div එක) තෝරාගැනීම
+    // 'report-container' යනු ඔබගේ රිපෝට් එක පෙන්වන div එකේ ID එක යැයි සිතන්න
+    const element = document.getElementById('report-container'); 
+
+    // PDF එක සඳහා අවශ්‍ය සැකසුම් (Settings)
+    const opt = {
+        margin:       0.5, // අඟල් වලින් මාර්ජින් එක
+        filename:     'Student_Report_DeepAnalyze.pdf', // සේව් වන නම
+        image:        { type: 'jpeg', quality: 0.98 },
+        
+        // scale: 2 මගින් PDF එකේ අකුරු ඉතා පැහැදිලිව (High Resolution) පෙන්වයි
+        // useCORS: true මගින් අන්තර්ජාලයෙන් ගෙනෙන ලෝගෝ පින්තූර PDF එකට වැටීමට ඉඩ සලසයි
+        html2canvas:  { scale: 2, useCORS: true }, 
+        
+        jsPDF:        { unit: 'in', format: 'A4', orientation: 'portrait' } // A4 ප්‍රමාණය සහ හැඩය
+    };
+
+    // තෝරාගත් කොටස PDF එකක් බවට පත් කර බාගත කිරීම (Download)
+    html2pdf().set(opt).from(element).save();
+};
   
