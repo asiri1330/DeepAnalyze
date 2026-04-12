@@ -776,7 +776,7 @@
       try {
           // Firebase Query එක හරහා අදාළ පන්තියේ සිසුන් පමණක් Download කරගැනීම
           let queryParams = `?orderBy="class"&equalTo="${cls}"`;
-          let classStudents = await apiCall('students', 'GET', null, queryParams);
+          let classStudents = await apiCall('students', 'GET', null,`?orderBy="class"&equalTo="${encodeURIComponent(cls)}"`);
           
           allStudentsData = classStudents || {}; // Cache එකට අදාළ පන්තිය පමණක් යෙදීම
 
