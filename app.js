@@ -137,24 +137,6 @@
       }
       return string; // Fallback
     }
-
-
-    // Fixed Hash Function to work on both Local file:// and HTTPS
-    async function hashData(string) {
-      try {
-          if (window.crypto && window.crypto.subtle) {
-              const utf8 = new TextEncoder().encode(string);
-              const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-              const hashArray = Array.from(new Uint8Array(hashBuffer));
-              return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('');
-          }
-      } catch (e) { console.warn("crypto.subtle not available, falling back to CryptoJS"); }
-      
-      if (typeof CryptoJS !== 'undefined') {
-          return CryptoJS.SHA256(string).toString(CryptoJS.enc.Hex);
-      }
-      return string; // Fallback
-    }
     
     // ---------------------------------------------------------
     // නව Vercel API එක හා සම්බන්ධ වන කේතය මෙතැනින් අලවන්න
