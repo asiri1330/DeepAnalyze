@@ -2893,7 +2893,25 @@ async function generateClassMasterReport() {
             row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
             csvContent += row.join(',') + "\n";
         });
-    } 
+    }
+// ✅ AFTER (sanitized + escaped)
+else if(data.type === 'Class') {
+    csvContent += `Class Master Sheet,Class: ${sanitizeText(data.cls)},Term: ${data.year} ${data.term}\n\n`;
+    csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
+    data.students.forEach(s => {
+        let row = [
+            `"${sanitizeText(s.admNo)}"`, 
+            `"${sanitizeText(s.name).replace(/"/g, '""')}"` // Escape quotes
+        ];
+        data.displayCols.forEach(col => { 
+            let cell = s.displayMarks[col]; 
+            let val = cell && cell.value !== undefined ? cell.value : "-"; 
+            row.push(`"${val}"`); 
+        });
+        row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
+        csvContent += row.join(',') + "\n";
+    });
+}
     else if(data.type === 'Subject') {
         csvContent += `Subject Marks,Subject: ${data.subject},Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,Marks,Grade\n`;
