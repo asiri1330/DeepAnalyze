@@ -440,9 +440,12 @@
       }
   };
 
+// ==========================================
+  // LOGIN & AUTH (නිවැරදි කළ ආරක්ෂිත ලොගින් පද්ධතිය)
   // ==========================================
-  // LOGIN & AUTH (ප්‍රතිනිර්මාණය කළ ආරක්ෂිත ලොගින් පද්ධතිය)
-  // ==========================================
+  
+  window.isLoggingIn = false; // ලොගින් වන අවස්ථාවේදී Auto-login වීම වැළැක්වීමේ විචල්‍යය
+
   window.login = async function() {
     let nic = document.getElementById('nicInput').value.trim().toUpperCase();
     let pass = document.getElementById('passInput').value.trim();
@@ -452,17 +455,34 @@
     if(!nic || !pass) return msg.innerText = "Please enter both ID and Password.";
     msg.innerText = ""; btn.innerHTML = 'Logging in...'; btn.disabled = true;
 
+    window.isLoggingIn = true; // Auto-Login අවහිර කිරීම
+
     try {
       let loginEmail = nic + "@elite.edu";
-      
-      // 1. Firebase Auth හරහා පමණක් ලොග් වීම තහවුරු කිරීම
-      await firebase.auth().signInWithEmailAndPassword(loginEmail, pass);
+      let isNewFirebaseUser = false;
+
+      // 1. Firebase Auth හරහා ලොග් වීමට උත්සාහ කිරීම
+      try {
+          await firebase.auth().signInWithEmailAndPassword(loginEmail, pass);
+      } catch(authErr) {
+          if (authErr.code === 'auth/user-not-found') {
+              // Firebase ගිණුමක් නොමැති නම්, ලබාදුන් මුරපදයෙන් තාවකාලිකව එය සාදන්න
+              await firebase.auth().createUserWithEmailAndPassword(loginEmail, pass);
+              isNewFirebaseUser = true;
+          } else {
+              throw authErr; // වෙනත් දෝෂයක් නම් (උදා: වැරදි මුරපදයක්)
+          }
+      }
 
       // 2. Database එකෙන් පරිශීලක දත්ත ලබා ගැනීම
       let data = await apiCall('teachers/' + nic);
       if(!data) { 
           msg.innerText = "User not found in Database."; 
+          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); // වැරදි NIC එකක් නම් සෑදූ ගිණුම මකා දැමීම
+          else await firebase.auth().signOut();
+          
           btn.disabled = false; btn.innerHTML = 'Login'; 
+          window.isLoggingIn = false;
           return;
       }
       
@@ -471,23 +491,65 @@
           tempSetupNic = nic; 
           document.getElementById('loginBox').style.display = 'none'; 
           document.getElementById('setupBox').style.display = 'flex'; 
+          window.isLoggingIn = false;
           return; 
       }
       
       // 4. දත්ත සමුදායේ ඇති Hash කළ මුරපදය පරීක්ෂා කිරීම
       if(data.password === await hashData(pass)) {
+          window.isLoggingIn = false;
           grantAccess(data, nic); 
       } else { 
           msg.innerText = "Wrong password details."; 
+          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); // මුරපදය වැරදි නම් සෑදූ ගිණුම මකා දැමීම
+          else await firebase.auth().signOut();
+          
           btn.disabled = false; btn.innerHTML = 'Login'; 
+          window.isLoggingIn = false;
       }
       
     } catch(err) { 
-        msg.innerText = "Wrong ID/Password (or accounts not synced)."; 
+        msg.innerText = "Login failed. Check your ID/Password."; 
         btn.disabled = false; btn.innerHTML = 'Login'; 
-        console.error(err);
+        console.error("Login Error:", err);
+        window.isLoggingIn = false;
     }
   }
+
+  // ==========================================
+  // INITIALIZATION & FIREBASE AUTH (නිවැරදි කළ)
+  // ==========================================
+  firebase.auth().onAuthStateChanged(async (user) => {
+      // Manual Login එකක් සිදුවන වෙලාවට මෙය ක්‍රියාත්මක වීම වළක්වයි
+      if (window.isLoggingIn) return; 
+
+      if (user) {
+          let email = user.email;
+          let nic = email.split('@')[0].toUpperCase();
+          if(nic === "ADMIN") {
+              let snapshot = await fetch(`${DB_URL}/teachers/ADMIN.json`).then(r => r.json()); 
+              if(!snapshot) { grantAccess({name: "Super Admin", role: "System Admin", isSetupMode: true}, "ADMIN"); } 
+              else { grantAccess(snapshot, "ADMIN"); }
+          } else {
+              try {
+                  let tData = await apiCall('teachers/' + nic);
+                  if (tData && !tData.isFirstLogin) grantAccess(tData, nic);
+                  else if (tData && tData.isFirstLogin) {
+                      tempSetupNic = nic;
+                      document.getElementById('loginBox').style.display = 'none';
+                      document.getElementById('setupBox').style.display = 'flex';
+                  }
+                  else await firebase.auth().signOut();
+              } catch(e) {
+                  await firebase.auth().signOut();
+              }
+          }
+      } else {
+          document.getElementById('appLayout').style.display = 'none';
+          document.getElementById('setupBox').style.display = 'none';
+          document.getElementById('loginBox').style.display = 'flex';
+      }
+  });
 
   function grantAccess(data, nic) {
     currentUser = data; currentUser.nic = nic;
