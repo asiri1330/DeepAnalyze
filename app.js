@@ -2973,20 +2973,31 @@ else if(data.type === 'Class') {
                      `"${s.advice.text.replace(/"/g, '""')}"\n`;  // Escaped!
     });
 }
-    else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\n`;
-        csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
-        Object.keys(data.subjectStats).forEach(sub => {
-            let stat = data.subjectStats[sub];
-            if(stat.W > 0 || stat.S > 0) csvContent += `"${sub}","${stat.W}","${stat.S}"\n`;
-        });
-        csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
-        data.students.forEach(s => {
-            let subDetails = s.details.map(d => `${d.subject}: ${d.mark} [${d.grade}]`).join(' | ');
-            csvContent += `"${s.admNo}","${s.name}",${data.type === 'RemedialGrade' ? `"${s.className}",` : ''}"${s.wCount}","${s.sCount}","${subDetails}"\n`;
-        });
-    }
+    // ❌ BEFORE
+let subDetails = s.details.map(d => `${d.subject}: ${d.mark} [${d.grade}]`).join(' | ');
+csvContent += `"${s.admNo}","${s.name}",${data.type === 'RemedialGrade' ? `"${s.className}",` : ''}"${s.wCount}","${s.sCount}","${subDetails}"\n`;
+
+// ✅ AFTER (properly escaped)
+else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
+    csvContent += `${title},Target: ${sanitizeText(data.target)},Term: ${data.year} ${data.term}\n\n`;
+    csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
+    Object.keys(data.subjectStats).forEach(sub => {
+        let stat = data.subjectStats[sub];
+        if(stat.W > 0 || stat.S > 0) 
+            csvContent += `"${sanitizeText(sub)}","${stat.W}","${stat.S}"\n`;
+    });
+    csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
+    data.students.forEach(s => {
+        let subDetails = s.details
+            .map(d => `${sanitizeText(d.subject)}: ${d.mark} [${d.grade}]`)
+            .join(' | ')
+            .replace(/"/g, '""');  // Escape quotes
+        csvContent += `"${sanitizeText(s.admNo)}",` +
+                     `"${sanitizeText(s.name).replace(/"/g, '""')}",` +
+                     (data.type === 'RemedialGrade' ? `"${sanitizeText(s.className)}",` : '') +
+                     `"${s.wCount}","${s.sCount}","${subDetails}"\n`;
+    });
+}
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
