@@ -2961,6 +2961,18 @@ else if(data.type === 'Class') {
             csvContent += `"${s.admNo}","${s.name}","${s.avg}","${s.advice.title}","${s.advice.text.replace(/"/g, '""')}"\n`;
         });
     }
+    // ✅ AFTER (properly escaped)
+    else if (data.type === 'ALPrediction') {
+    csvContent += `A/L AI Prediction,Class: ${sanitizeText(data.cls)}\n\n`;
+    csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
+    data.students.forEach(s => {
+        csvContent += `"${sanitizeText(s.admNo)}",` +
+                     `"${sanitizeText(s.name).replace(/"/g, '""')}",` +
+                     `"${s.avg}",` +
+                     `"${s.advice.title.replace(/"/g, '""')}",` +
+                     `"${s.advice.text.replace(/"/g, '""')}"\n`;  // Escaped!
+    });
+}
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
         let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
         csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\n`;
