@@ -2335,7 +2335,7 @@ async function generateClassMasterReport() {
     
     // --- MOBILE FIX: Popup වෙනුවට Hidden Iframe එකක් භාවිතා කිරීම ---
     let oldIframe = document.getElementById('mobilePrintFrame');
-    if (oldIframe) { oldIframe.remove(); } // කලින් Iframe එකක් ඇත්නම් එය ඉවත් කිරීම
+    if (oldIframe) { oldIframe.remove(); } 
 
     let iframe = document.createElement('iframe');
     iframe.id = 'mobilePrintFrame';
@@ -2348,11 +2348,9 @@ async function generateClassMasterReport() {
     const printWindow = iframe.contentWindow;
     // ---------------------------------------------------------------
     
-    // පන්තිය සහ පන්තිභාර ගුරුතුමාගේ නම ලබා ගැනීම
     let repClass = data.cls || data.targetName || data.target || "";
     let repTeacher = data.ctName || (repClass && allClassesData[repClass] ? allClassesData[repClass].teacher : "..........................");
     
-    // සිංහල අකුරු සඳහා Iskoola Pota, Nirmala UI මෙහි එක් කර ඇත
     let commonStyles = `@page { size: A4 portrait; margin: 10mm; } 
     * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, 'Iskoola Pota', 'Nirmala UI', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
     body { margin:0; text-transform: capitalize;} 
@@ -2710,16 +2708,14 @@ async function generateClassMasterReport() {
         printWindow.document.write(finalHtml);
     }
 
-    // --- PDF නාමය වෙනස් කිරීමේ ස්ථිරසාර ක්‍රමය (Strict Overwrite) ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-    // නිවැරදි targetName අගය ලබා ගැනීම:
-    let safeClassName = (data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
-    let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`.replace(/\s+/g, '_');
+    // ආරක්ෂිතව String බවට පත්කිරීමට String() භාවිතය
+    let safeClassName = String(data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    let fileName = String(`${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`).replace(/\s+/g, '_');
     
     printWindow.document.close(); 
     
-    // Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
     let frameTitleTag = printWindow.document.querySelector('title');
     if (frameTitleTag) {
         frameTitleTag.innerText = fileName;
@@ -2729,37 +2725,42 @@ async function generateClassMasterReport() {
         printWindow.document.head.appendChild(newTitle);
     }
 
-    // ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
     let originalTitle = document.title;
     document.title = fileName;
     
-    // බ්‍රවුසරයට නම වෙනස් කරගැනීමට මදක් වැඩිපුර කාලයක් (තත්පර 1ක්) ලබා දී Print කිරීම
     setTimeout(() => { 
         printWindow.focus();
         printWindow.print(); 
         
-        // Print තිරය පැමිණි පසු නැවත පරණ නම යථා තත්ත්වයට පත් කිරීම
         setTimeout(() => { document.title = originalTitle; }, 2000);
     }, 1000);
   }
 
   // ==========================================
-  // CSV EXPORT (Blob භාවිතයෙන් විශේෂ අක්ෂර දෝෂය නිවැරදි කර ඇත)
+  // CSV EXPORT (undefined/null අගයන් සඳහා ආරක්ෂා කර ඇත)
   // ==========================================
   window.exportReportToCSV = function() {
     const data = window.currentReportData; 
     if (!data) return alert("No report generated.");
     
-    // Excel හි සිංහල අකුරු නිවැරදිව පෙන්වීමට UTF-8 BOM (\uFEFF) එක් කිරීම
+    // --- Error එක වැළැක්වීමේ ප්‍රධාන Helper Function එක ---
+    // මෙය මගින් අදාළ දත්තය undefined හෝ null වුවහොත් කේතය බිඳවැටීම වළක්වා හිස් ("") String එකක් ලබා දේ
+    const safeEscape = (val) => {
+        if (val === null || val === undefined) return "";
+        let str = String(val);
+        if (window.sanitizeText) str = window.sanitizeText(str);
+        return str.replace(/"/g, '""');
+    };
+
     let csvContent = "\uFEFF";
 
     if(data.type === 'Class') {
-        csvContent += `Class Master Sheet,Class: ${window.sanitizeText ? window.sanitizeText(data.cls) : data.cls},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `Class Master Sheet,Class: ${safeEscape(data.cls)},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
         data.students.forEach(s => {
             let row = [
-                `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}"`, 
-                `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}"`
+                `"${safeEscape(s.admNo)}"`, 
+                `"${safeEscape(s.name)}"`
             ];
             data.displayCols.forEach(col => { 
                 let cell = s.displayMarks[col]; 
@@ -2771,87 +2772,88 @@ async function generateClassMasterReport() {
         });
     }
     else if(data.type === 'Subject') {
-        csvContent += `Subject Marks,Subject: ${data.subject},Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `Subject Marks,Subject: ${safeEscape(data.subject)},Class: ${safeEscape(data.cls)},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,Marks,Grade\n`;
-        data.students.forEach(s => { csvContent += `"${s.admNo}","${s.name}","${s.mark}","${s.grade}"\n`; });
+        data.students.forEach(s => { csvContent += `"${safeEscape(s.admNo)}","${safeEscape(s.name)}","${s.mark}","${s.grade}"\n`; });
     }
     else if(data.type === 'TopClass' || data.type === 'TopSection') {
         let title = data.type === 'TopClass' ? "Class Top Students" : "Grade Top Students";
-        csvContent += `${title},Target: ${data.targetName},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `${title},Target: ${safeEscape(data.targetName)},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Rank,Adm No,Student Name,${data.type === 'TopSection' ? 'Class,' : ''}${data.isALevel ? 'Z-Score' : 'Average'},Total\n`;
-        data.students.forEach(s => { let rnk = data.type === 'TopSection' ? s.sectionRank : s.rank; csvContent += `"${rnk}","${s.admNo}","${s.name}",${data.type === 'TopSection' ? `"${s.className}",` : ''}"${data.isALevel ? s.overallZ : s.average}","${s.total}"\n`; });
+        data.students.forEach(s => { 
+            let rnk = data.type === 'TopSection' ? s.sectionRank : s.rank; 
+            csvContent += `"${rnk}","${safeEscape(s.admNo)}","${safeEscape(s.name)}",${data.type === 'TopSection' ? `"${safeEscape(s.className)}",` : ''}"${data.isALevel ? s.overallZ : s.average}","${s.total}"\n`; 
+        });
     }
     else if(data.type === 'PassesSummaryClass' || data.type === 'PassesSummarySection') {
         let title = data.type === 'PassesSummaryClass' ? "Passes Summary (Class)" : "Passes Summary (Grade)";
-        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `${title},Target: ${safeEscape(data.target)},Term: ${data.year} ${data.term}\n\n`;
         let sortedCombos = Object.keys(data.combos).sort((a,b) => data.combos[b].score - data.combos[a].score);
         sortedCombos.forEach(combo => {
             let stds = data.combos[combo].students;
             csvContent += `Combo: ${combo} (${stds.length} Students)\n`;
             csvContent += `Adm No,Student Name,Class,Average\n`;
-            stds.forEach(s => { csvContent += `"${s.admNo}","${s.name}","${s.className || data.target}","${s.average}"\n`; });
+            stds.forEach(s => { csvContent += `"${safeEscape(s.admNo)}","${safeEscape(s.name)}","${safeEscape(s.className || data.target)}","${s.average}"\n`; });
             csvContent += `\n`;
         });
     }
     else if(data.type === 'Prediction') {
-        csvContent += `O/L AI Prediction,Class: ${data.cls}\n\n`;
+        csvContent += `O/L AI Prediction,Class: ${safeEscape(data.cls)}\n\n`;
         csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Predicted Avg\n`;
         data.students.forEach(s => {
-            let row = [`"${s.admNo}"`, `"${s.name}"`];
+            let row = [`"${safeEscape(s.admNo)}"`, `"${safeEscape(s.name)}"`];
             data.rawSubKeys.forEach(k => { let val = s.predicted[k]; row.push(`"${val !== undefined ? val : '-'}"`); });
             row.push(`"${s.avg}"`);
             csvContent += row.join(',') + "\n";
         });
     }
     else if (data.type === 'ClassStudentList') {
-        csvContent += `Class Student List,Class: ${data.cls}\n`;
-        csvContent += `Class Teacher: ${data.ctName},Total Students: ${data.students.length}\n\n`;
+        csvContent += `Class Student List,Class: ${safeEscape(data.cls)}\n`;
+        csvContent += `Class Teacher: ${safeEscape(data.ctName)},Total Students: ${data.students.length}\n\n`;
         csvContent += `No,Adm No,Student Name,Gender,Contact Number\n`;
         data.students.forEach((s, index) => {
-            csvContent += `"${index + 1}","${s.admNo}","${s.name}","${s.gender || 'Male'}","${s.contact || '-'}"\n`;
+            csvContent += `"${index + 1}","${safeEscape(s.admNo)}","${safeEscape(s.name)}","${s.gender || 'Male'}","${s.contact || '-'}"\n`;
         });
     }
     else if (data.type === 'ALPrediction') {
-        csvContent += `A/L AI Prediction,Class: ${window.sanitizeText ? window.sanitizeText(data.cls) : data.cls}\n\n`;
+        csvContent += `A/L AI Prediction,Class: ${safeEscape(data.cls)}\n\n`;
         csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
         data.students.forEach(s => {
-            csvContent += `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}",` +
-                          `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}",` +
+            csvContent += `"${safeEscape(s.admNo)}",` +
+                          `"${safeEscape(s.name)}",` +
                           `"${s.avg}",` +
-                          `"${s.advice.title.replace(/"/g, '""')}",` +
-                          `"${s.advice.text.replace(/"/g, '""')}"\n`;
+                          `"${safeEscape(s.advice ? s.advice.title : "")}",` +
+                          `"${safeEscape(s.advice ? s.advice.text : "")}"\n`;
         });
     }
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
         let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        csvContent += `${title},Target: ${window.sanitizeText ? window.sanitizeText(data.target) : data.target},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `${title},Target: ${safeEscape(data.target)},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
         Object.keys(data.subjectStats).forEach(sub => {
             let stat = data.subjectStats[sub];
             if(stat.W > 0 || stat.S > 0) 
-                csvContent += `"${window.sanitizeText ? window.sanitizeText(sub) : sub}","${stat.W}","${stat.S}"\n`;
+                csvContent += `"${safeEscape(sub)}","${stat.W}","${stat.S}"\n`;
         });
         csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
         data.students.forEach(s => {
             let subDetails = s.details
-                .map(d => `${window.sanitizeText ? window.sanitizeText(d.subject) : d.subject}: ${d.mark} [${d.grade}]`)
-                .join(' | ')
-                .replace(/"/g, '""');
-            csvContent += `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}",` +
-                          `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}",` +
-                          (data.type === 'RemedialGrade' ? `"${window.sanitizeText ? window.sanitizeText(s.className) : s.className}",` : '') +
-                          `"${s.wCount}","${s.sCount}","${subDetails}"\n`;
+                .map(d => `${d.subject}: ${d.mark} [${d.grade}]`)
+                .join(' | ');
+            csvContent += `"${safeEscape(s.admNo)}",` +
+                          `"${safeEscape(s.name)}",` +
+                          (data.type === 'RemedialGrade' ? `"${safeEscape(s.className)}",` : '') +
+                          `"${s.wCount}","${s.sCount}","${safeEscape(subDetails)}"\n`;
         });
     }
 
-    // පැරණි encodeURI ක්‍රමය ඉවත්කර වඩාත් ආරක්ෂිත Blob ක්‍රමය භාවිතා කිරීම
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
     
-    // නිවැරදි ෆයිල් නාමය සැකසීම
-    let safeClassName = (data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    // ආරක්ෂිතව String බවට පත්කිරීමට String() භාවිතය
+    let safeClassName = String(data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds();
     link.setAttribute("download", `${data.type}_Report_${safeClassName}_${data.year || d.getFullYear()}_${timeString}.csv`);
@@ -2859,7 +2861,7 @@ async function generateClassMasterReport() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url); // මතකය නිදහස් කිරීම
+    URL.revokeObjectURL(url);
   };
 
   // INITIALIZATION
