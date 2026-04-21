@@ -2945,38 +2945,31 @@ async function generateClassMasterReport() {
     }, 1000);
   }
 
+  // ==========================================
+  // PDF & CSV EXPORT 
+  // ==========================================
   window.exportReportToCSV = function() {
-    const data = window.currentReportData; if (!data) return alert("No report generated.");
+    const data = window.currentReportData; 
+    if (!data) return alert("No report generated.");
     let csvContent = "data:text/csv;charset=utf-8,";
 
     if(data.type === 'Class') {
-        csvContent += `Class Master Sheet,Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `Class Master Sheet,Class: ${window.sanitizeText ? window.sanitizeText(data.cls) : data.cls},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
         data.students.forEach(s => {
-            let row = [`"${s.admNo}"`, `"${s.name}"`];
-            data.displayCols.forEach(col => { let cell = s.displayMarks[col]; let val = cell && cell.value !== undefined ? cell.value : "-"; row.push(`"${val}"`); });
+            let row = [
+                `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}"`, 
+                `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}"`
+            ];
+            data.displayCols.forEach(col => { 
+                let cell = s.displayMarks[col]; 
+                let val = cell && cell.value !== undefined ? cell.value : "-"; 
+                row.push(`"${val}"`); 
+            });
             row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
             csvContent += row.join(',') + "\n";
         });
     }
-// ✅ AFTER (sanitized + escaped)
-else if(data.type === 'Class') {
-    csvContent += `Class Master Sheet,Class: ${sanitizeText(data.cls)},Term: ${data.year} ${data.term}\n\n`;
-    csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
-    data.students.forEach(s => {
-        let row = [
-            `"${sanitizeText(s.admNo)}"`, 
-            `"${sanitizeText(s.name).replace(/"/g, '""')}"` // Escape quotes
-        ];
-        data.displayCols.forEach(col => { 
-            let cell = s.displayMarks[col]; 
-            let val = cell && cell.value !== undefined ? cell.value : "-"; 
-            row.push(`"${val}"`); 
-        });
-        row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
-        csvContent += row.join(',') + "\n";
-    });
-}
     else if(data.type === 'Subject') {
         csvContent += `Subject Marks,Subject: ${data.subject},Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,Marks,Grade\n`;
@@ -3014,55 +3007,42 @@ else if(data.type === 'Class') {
         csvContent += `Class Student List,Class: ${data.cls}\n`;
         csvContent += `Class Teacher: ${data.ctName},Total Students: ${data.students.length}\n\n`;
         csvContent += `No,Adm No,Student Name,Gender,Contact Number\n`;
-        
         data.students.forEach((s, index) => {
             csvContent += `"${index + 1}","${s.admNo}","${s.name}","${s.gender || 'Male'}","${s.contact || '-'}"\n`;
         });
     }
     else if (data.type === 'ALPrediction') {
-        csvContent += `A/L AI Prediction,Class: ${data.cls}\n\n`;
+        csvContent += `A/L AI Prediction,Class: ${window.sanitizeText ? window.sanitizeText(data.cls) : data.cls}\n\n`;
         csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
         data.students.forEach(s => {
-            csvContent += `"${s.admNo}","${s.name}","${s.avg}","${s.advice.title}","${s.advice.text.replace(/"/g, '""')}"\n`;
+            csvContent += `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}",` +
+                          `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}",` +
+                          `"${s.avg}",` +
+                          `"${s.advice.title.replace(/"/g, '""')}",` +
+                          `"${s.advice.text.replace(/"/g, '""')}"\n`;
         });
     }
-    // ✅ AFTER (properly escaped)
-    else if (data.type === 'ALPrediction') {
-    csvContent += `A/L AI Prediction,Class: ${sanitizeText(data.cls)}\n\n`;
-    csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
-    data.students.forEach(s => {
-        csvContent += `"${sanitizeText(s.admNo)}",` +
-                     `"${sanitizeText(s.name).replace(/"/g, '""')}",` +
-                     `"${s.avg}",` +
-                     `"${s.advice.title.replace(/"/g, '""')}",` +
-                     `"${s.advice.text.replace(/"/g, '""')}"\n`;  // Escaped!
-    });
-}
-    // ❌ BEFORE
-let subDetails = s.details.map(d => `${d.subject}: ${d.mark} [${d.grade}]`).join(' | ');
-csvContent += `"${s.admNo}","${s.name}",${data.type === 'RemedialGrade' ? `"${s.className}",` : ''}"${s.wCount}","${s.sCount}","${subDetails}"\n`;
-
-// ✅ AFTER (properly escaped)
-else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-    csvContent += `${title},Target: ${sanitizeText(data.target)},Term: ${data.year} ${data.term}\n\n`;
-    csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
-    Object.keys(data.subjectStats).forEach(sub => {
-        let stat = data.subjectStats[sub];
-        if(stat.W > 0 || stat.S > 0) 
-            csvContent += `"${sanitizeText(sub)}","${stat.W}","${stat.S}"\n`;
-    });
-    csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
-    data.students.forEach(s => {
-        let subDetails = s.details
-            .map(d => `${sanitizeText(d.subject)}: ${d.mark} [${d.grade}]`)
-            .join(' | ')
-            .replace(/"/g, '""');  // Escape quotes
-        csvContent += `"${sanitizeText(s.admNo)}",` +
-                     `"${sanitizeText(s.name).replace(/"/g, '""')}",` +
-                     (data.type === 'RemedialGrade' ? `"${sanitizeText(s.className)}",` : '') +
-                     `"${s.wCount}","${s.sCount}","${subDetails}"\n`;
-    });
-}
+    else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
+        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
+        csvContent += `${title},Target: ${window.sanitizeText ? window.sanitizeText(data.target) : data.target},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
+        Object.keys(data.subjectStats).forEach(sub => {
+            let stat = data.subjectStats[sub];
+            if(stat.W > 0 || stat.S > 0) 
+                csvContent += `"${window.sanitizeText ? window.sanitizeText(sub) : sub}","${stat.W}","${stat.S}"\n`;
+        });
+        csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
+        data.students.forEach(s => {
+            let subDetails = s.details
+                .map(d => `${window.sanitizeText ? window.sanitizeText(d.subject) : d.subject}: ${d.mark} [${d.grade}]`)
+                .join(' | ')
+                .replace(/"/g, '""');
+            csvContent += `"${window.sanitizeText ? window.sanitizeText(s.admNo) : s.admNo}",` +
+                          `"${(window.sanitizeText ? window.sanitizeText(s.name) : s.name).replace(/"/g, '""')}",` +
+                          (data.type === 'RemedialGrade' ? `"${window.sanitizeText ? window.sanitizeText(s.className) : s.className}",` : '') +
+                          `"${s.wCount}","${s.sCount}","${subDetails}"\n`;
+        });
+    }
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -3071,7 +3051,7 @@ else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+  };
 
   // INITIALIZATION
   firebase.auth().onAuthStateChanged(async (user) => {
