@@ -441,10 +441,10 @@
   };
 
 // ==========================================
-  // LOGIN & AUTH (නිවැරදි කළ ආරක්ෂිත ලොගින් පද්ධතිය)
+  // LOGIN & AUTH (Fixed & Secured)
   // ==========================================
   
-  window.isLoggingIn = false; // ලොගින් වන අවස්ථාවේදී Auto-login වීම වැළැක්වීමේ විචල්‍යය
+  window.isLoggingIn = false;
 
   window.login = async function() {
     let nic = document.getElementById('nicInput').value.trim().toUpperCase();
@@ -455,30 +455,34 @@
     if(!nic || !pass) return msg.innerText = "Please enter both ID and Password.";
     msg.innerText = ""; btn.innerHTML = 'Logging in...'; btn.disabled = true;
 
-    window.isLoggingIn = true; // Auto-Login අවහිර කිරීම
+    window.isLoggingIn = true; 
 
     try {
       let loginEmail = nic + "@elite.edu";
       let isNewFirebaseUser = false;
 
-      // 1. Firebase Auth හරහා ලොග් වීමට උත්සාහ කිරීම
+      // 1. Firebase Auth login attempt
       try {
           await firebase.auth().signInWithEmailAndPassword(loginEmail, pass);
       } catch(authErr) {
-          if (authErr.code === 'auth/user-not-found') {
-              // Firebase ගිණුමක් නොමැති නම්, ලබාදුන් මුරපදයෙන් තාවකාලිකව එය සාදන්න
-              await firebase.auth().createUserWithEmailAndPassword(loginEmail, pass);
-              isNewFirebaseUser = true;
+          // Handle Firebase invalid-credential and user-not-found securely
+          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
+              try {
+                  await firebase.auth().createUserWithEmailAndPassword(loginEmail, pass);
+                  isNewFirebaseUser = true;
+              } catch (createErr) {
+                  throw new Error("Wrong password or account already exists."); 
+              }
           } else {
-              throw authErr; // වෙනත් දෝෂයක් නම් (උදා: වැරදි මුරපදයක්)
+              throw authErr; 
           }
       }
 
-      // 2. Database එකෙන් පරිශීලක දත්ත ලබා ගැනීම
+      // 2. Fetch data from Database
       let data = await apiCall('teachers/' + nic);
       if(!data) { 
           msg.innerText = "User not found in Database."; 
-          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); // වැරදි NIC එකක් නම් සෑදූ ගිණුම මකා දැමීම
+          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); 
           else await firebase.auth().signOut();
           
           btn.disabled = false; btn.innerHTML = 'Login'; 
@@ -486,7 +490,7 @@
           return;
       }
       
-      // 3. පළමු වරට ලොග් වන්නේ නම් Setup Box එක පෙන්වීම
+      // 3. First login Setup
       if(data.isFirstLogin || !data.password) { 
           tempSetupNic = nic; 
           document.getElementById('loginBox').style.display = 'none'; 
@@ -495,13 +499,13 @@
           return; 
       }
       
-      // 4. දත්ත සමුදායේ ඇති Hash කළ මුරපදය පරීක්ෂා කිරීම
+      // 4. Verify password hash
       if(data.password === await hashData(pass)) {
           window.isLoggingIn = false;
           grantAccess(data, nic); 
       } else { 
           msg.innerText = "Wrong password details."; 
-          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); // මුරපදය වැරදි නම් සෑදූ ගිණුම මකා දැමීම
+          if (isNewFirebaseUser) await firebase.auth().currentUser.delete(); 
           else await firebase.auth().signOut();
           
           btn.disabled = false; btn.innerHTML = 'Login'; 
@@ -514,7 +518,7 @@
         console.error("Login Error:", err);
         window.isLoggingIn = false;
     }
-  }
+  };
 
   // ==========================================
   // INITIALIZATION & FIREBASE AUTH (නිවැරදි කළ)
