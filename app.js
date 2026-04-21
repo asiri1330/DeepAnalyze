@@ -636,10 +636,10 @@
         let filterVal = document.getElementById('filterSubject').value.trim().toLowerCase();
         let tbody = document.getElementById('subjectsTbody'); 
         let keys = Object.keys(allSubjectsData); 
-        let filteredKeys = keys.filter(k => allSubjectsData[k].name.toLowerCase().includes(filterVal) || (allSubjectsData[k].code || "").toLowerCase().includes(filterVal) || (allSubjectsData[k].basketName || "").toLowerCase().includes(filterVal));
+        let filteredKeys = keys.filter(k => (allSubjectsData[k].name || "").toLowerCase().includes(filterVal) || (allSubjectsData[k].code || "").toLowerCase().includes(filterVal) || (allSubjectsData[k].basketName || "").toLowerCase().includes(filterVal));
         
         if(filteredKeys.length === 0) return tbody.innerHTML = `<tr><td colspan='4' style='text-align:center; padding:20px;'>No subjects found.</td></tr>`; 
-        filteredKeys.sort((a,b) => allSubjectsData[a].name.localeCompare(allSubjectsData[b].name));
+        filteredKeys.sort((a,b) => (allSubjectsData[a].name || "").localeCompare(allSubjectsData[b].name || ""));
         
         let actionTh = document.querySelector('#subjectsTable th:last-child');
         if(actionTh) actionTh.style.display = window.perms.editSubjects ? '' : 'none';
@@ -647,14 +647,15 @@
         let tableData = ""; 
         filteredKeys.forEach(k => { 
             let s = allSubjectsData[k]; 
+            let safeName = s.name ? s.name.replace(/'/g, "\\'") : '';
             let tBadge = s.gradeType ? `<span class="badge badge-gray" style="margin:0;">${s.gradeType.replace('_', ' ').toUpperCase()}</span>` : '';
             let bBadge = s.basketName ? `<span class="badge badge-blue" style="margin:0;">${s.basketName}</span>` : '';
-            let btnHtml = window.perms.editSubjects ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editSubject('${k}', '${s.name.replace(/'/g, "\\'")}', '${s.code || ''}', '${s.gradeType || 'ol_main'}', '${s.basketName || ''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteSubject('${k}', '${s.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : '';
+            let btnHtml = window.perms.editSubjects ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editSubject('${k}', '${safeName}', '${s.code || ''}', '${s.gradeType || 'ol_main'}', '${s.basketName || ''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteSubject('${k}', '${safeName}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : '';
             
             tableData += `<tr>
                             <td>
                                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-                                <span style="font-weight:700; white-space:nowrap;">${s.name}</span>
+                                <span style="font-weight:700; white-space:nowrap;">${s.name || "-"}</span>
                                 ${bBadge}
                             </div>
                             </td>
@@ -732,13 +733,14 @@
       let tableData = "";
       filteredKeys.forEach(key => { 
           let t = allTeachersData[key]; 
+          let safeName = t.name ? t.name.replace(/'/g, "\\'") : '';
           let rBadge = t.isAdmin ? `<span class="badge badge-red" style="margin:0;">ADMIN</span>` : "";
-          let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${key}','${t.name}')" title="Reset Password"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${key}','${t.name.replace(/'/g, "\\'")}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${key}','${t.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : ''; 
+          let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${key}','${safeName}')" title="Reset Password"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${key}','${safeName}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${key}','${safeName}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : ''; 
           
           tableData += `<tr>
                             <td style="font-weight:700;">${t.empNo || '-'}</td>
                             <td>${key}</td>
-                            <td style="font-weight:800; color:var(--text-main);">${t.name}</td>
+                            <td style="font-weight:800; color:var(--text-main);">${t.name || "-"}</td>
                             <td>
                                 <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
                                     <span class="badge badge-gray" style="margin:0;">${t.role}</span>
@@ -824,7 +826,6 @@
       }
   };
 
-  // යාවත්කාලීන කළ ශ්‍රිතය: Load වූ පන්තියේ සිසුන් අතරින් Search කිරීම
   window.filterStudents = debounce(function() {
       let cls = document.getElementById('studentClassFilter').value;
       let filterVal = document.getElementById('filterStudentInput').value.trim().toLowerCase();
@@ -861,6 +862,7 @@
       let tableData = "";
       filteredKeys.forEach(key => { 
           let s = allStudentsData[key]; 
+          let safeName = s.name ? s.name.replace(/'/g, "\\'") : '';
           let canEditThis = false;
           if (window.perms.editStudents) {
               if (isSysAdmin || (!isCT && window.perms.editStudents)) { 
@@ -873,13 +875,13 @@
           let btnHtml = '';
           if(window.perms.editStudents) {
               if(canEditThis) {
-                btnHtml = `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editStudent('${key}', '${s.name.replace(/'/g, "\\'")}', '${s.class}', '${s.gender}', '${s.contact || ''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteStudent('${key}', '${s.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>`;
+                btnHtml = `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editStudent('${key}', '${safeName}', '${s.class}', '${s.gender}', '${s.contact || ''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteStudent('${key}', '${safeName}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>`;
               } else {
                 btnHtml = `<td></td>`;
               }
           }
           
-          tableData += `<tr><td style="font-weight:700;">${key}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td><span class="badge badge-gray">${s.class}</span></td><td><span class="badge badge-blue">${s.gender || 'Male'}</span></td>${btnHtml}</tr>`; 
+          tableData += `<tr><td style="font-weight:700;">${key}</td><td style="font-weight:800; color:var(--text-main);">${s.name || "-"}</td><td><span class="badge badge-gray">${s.class}</span></td><td><span class="badge badge-blue">${s.gender || 'Male'}</span></td>${btnHtml}</tr>`; 
       });
       tbody.innerHTML = tableData;
   }, 400);
@@ -1170,13 +1172,18 @@
   
     window.showStudentSuggestions = debounce(function(val) { 
         let box = document.getElementById('progSuggestions'); val = val.trim().toLowerCase(); let clsFilter = document.getElementById('progClassFilter').value.trim(); 
-        let matches = Object.keys(allStudentsData).filter(k => { let s = allStudentsData[k]; let matchText = val === "" || k.toLowerCase().includes(val) || s.name.toLowerCase().includes(val); let matchCls = clsFilter === "" || s.class === clsFilter; return matchText && matchCls; }); 
+        let matches = Object.keys(allStudentsData).filter(k => { let s = allStudentsData[k]; let matchText = val === "" || k.toLowerCase().includes(val) || (s.name||"").toLowerCase().includes(val); let matchCls = clsFilter === "" || s.class === clsFilter; return matchText && matchCls; }); 
         if(matches.length === 0) { box.innerHTML = '<div class="autocomplete-item" style="color:var(--text-muted); cursor:default;">No students found</div>'; box.style.display = 'block'; return; } 
         
         let html = ''; let limit = (val === "" && clsFilter !== "") ? 100 : 15;
-        matches.slice(0, limit).forEach(k => { let s = allStudentsData[k]; html += `<div class="autocomplete-item" onclick="selectProgressStudent('${k}', '${s.name.replace(/'/g, "\\'")}')"><b>${k}</b> - ${s.name} <span style="float:right; color:var(--primary); font-size:12px; font-weight:800;">${s.class}</span></div>`; }); 
+        matches.slice(0, limit).forEach(k => { 
+            let s = allStudentsData[k]; 
+            let safeName = s.name ? s.name.replace(/'/g, "\\'") : '';
+            html += `<div class="autocomplete-item" onclick="selectProgressStudent('${k}', '${safeName}')"><b>${k}</b> - ${s.name || "-"} <span style="float:right; color:var(--primary); font-size:12px; font-weight:800;">${s.class}</span></div>`; 
+        }); 
         box.innerHTML = html; box.style.display = 'block'; 
     }, 300);
+    
     window.selectProgressStudent = function(admNo, name) { document.getElementById('progAdmNo').value = admNo; document.getElementById('progSuggestions').style.display = 'none'; loadStudentProgress(); }
     document.addEventListener("click", function (e) { 
       if (e.target.id !== "progAdmNo" && e.target.id !== "compareSearchInput" && e.target.id !== "studentMarksSearch") { 
