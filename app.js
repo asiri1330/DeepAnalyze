@@ -84,7 +84,9 @@
     };
 
     async function fetchWithCache(path, forceRefresh = false) {
-        const cacheKey = 'elite_cache_' + path.replace(/\//g, '_');
+        // path එක string එකක් බව අනිවාර්ය කිරීම
+        const safePath = path ? String(path) : 'root';
+        const cacheKey = 'elite_cache_' + safePath.replace(/\//g, '_');
         
         if (!forceRefresh) {
             if (memoryCache[cacheKey]) return memoryCache[cacheKey]; 
@@ -101,8 +103,6 @@
         const data = await apiCall(path);
         if (data) {
             memoryCache[cacheKey] = data; 
-            
-            // දත්ත IndexedDB එකට දැමීම තිරය හිර නොවන සේ පසුබිමෙන් සිදු කිරීම
             setTimeout(async () => {
                 try {
                     await saveToIDB(cacheKey, data, Date.now());
@@ -344,8 +344,11 @@
 
   function populateTeacherDropdowns() {
       let html = '<option value="">-- Select Teacher --</option>';
-      let sortedKeys = Object.keys(allTeachersData).sort((a,b) => allTeachersData[a].name.localeCompare(allTeachersData[b].name));
-      sortedKeys.forEach(k => html += `<option value="${allTeachersData[k].name}">${allTeachersData[k].name} (${allTeachersData[k].empNo||k})</option>`);
+      let sortedKeys = Object.keys(allTeachersData).sort((a,b) => (allTeachersData[a].name || "").localeCompare(allTeachersData[b].name || ""));
+      sortedKeys.forEach(k => {
+          let tName = allTeachersData[k].name || "-";
+          html += `<option value="${tName}">${tName} (${allTeachersData[k].empNo||k})</option>`;
+      });
       document.getElementById('cTeacher').innerHTML = html;
   }
 
@@ -401,14 +404,15 @@
       let singleSelHTML = '<option value="">-- Select Subject --</option>';
       let marksSelHTML = '<option value="">-- Select Subject/Category --</option>';
 
-      let sortedKeys = Object.keys(allSubjectsData).sort((a,b) => allSubjectsData[a].name.localeCompare(allSubjectsData[b].name));
+      let sortedKeys = Object.keys(allSubjectsData).sort((a,b) => (allSubjectsData[a].name || "").localeCompare(allSubjectsData[b].name || ""));
       let buckets = new Set();
       let mainHTML = '<optgroup label="Main Subjects">';
 
       sortedKeys.forEach(k => {
           let s = allSubjectsData[k];
-          singleSelHTML += `<option value="${k}">${s.name}</option>`;
-          if(s.basketName) { buckets.add(s.basketName); } else { mainHTML += `<option value="${k}">${s.name}</option>`; }
+          let safeName = s.name || "-";
+          singleSelHTML += `<option value="${k}">${safeName}</option>`;
+          if(s.basketName) { buckets.add(s.basketName); } else { mainHTML += `<option value="${k}">${safeName}</option>`; }
       });
       mainHTML += '</optgroup>';
 
@@ -2255,16 +2259,23 @@ async function generateClassMasterReport() {
         renderPassComboChart(val);
     }, 300);
 
-  // --- CHART 3: COMPARE STUDENT VS RANK 1 ---
-    window.filterCompareSuggestions = debounce(function(val) {
+  window.filterCompareSuggestions = debounce(function(val) {
         let box = document.getElementById('compareSuggestions');
         val = val.trim().toLowerCase();
-        let matches = Object.keys(allStudentsData).filter(k => k.toLowerCase().includes(val) || allStudentsData[k].name.toLowerCase().includes(val));
+        
+        // name එක undefined වූ විට ක්‍රියා විරහිත වීම වැළැක්වීම
+        let matches = Object.keys(allStudentsData).filter(k => 
+            k.toLowerCase().includes(val) || 
+            (allStudentsData[k].name || "").toLowerCase().includes(val)
+        );
+        
         if(matches.length === 0) { box.innerHTML = '<div class="autocomplete-item">No students found</div>'; box.style.display = 'block'; return; }
+        
         let html = '';
         matches.slice(0, 10).forEach(k => {
-            let sName = allStudentsData[k].name;
-            html += `<div class="autocomplete-item" onclick="selectCompareStudent('${k}', '${sName.replace(/'/g, "\\'")}')"><b>${k}</b> - ${sName}</div>`;
+            let sName = allStudentsData[k].name || "Unknown";
+            let safeName = sName.replace(/'/g, "\\'"); // ආරක්ෂිතව නම යෙදීම
+            html += `<div class="autocomplete-item" onclick="selectCompareStudent('${k}', '${safeName}')"><b>${k}</b> - ${sName}</div>`;
         });
         box.innerHTML = html; box.style.display = 'block';
     }, 300);
