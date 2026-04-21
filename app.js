@@ -521,11 +521,10 @@
   };
 
   // ==========================================
-  // INITIALIZATION & FIREBASE AUTH (නිවැරදි කළ)
+  // INITIALIZATION & FIREBASE AUTH
   // ==========================================
   firebase.auth().onAuthStateChanged(async (user) => {
-      // Manual Login එකක් සිදුවන වෙලාවට මෙය ක්‍රියාත්මක වීම වළක්වයි
-      if (window.isLoggingIn) return; 
+      if (window.isLoggingIn) return; // Prevent auto-triggering during manual login
 
       if (user) {
           let email = user.email;
