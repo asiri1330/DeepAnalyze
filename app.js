@@ -520,40 +520,6 @@
     }
   };
 
-  // ==========================================
-  // INITIALIZATION & FIREBASE AUTH
-  // ==========================================
-  firebase.auth().onAuthStateChanged(async (user) => {
-      if (window.isLoggingIn) return; // Prevent auto-triggering during manual login
-
-      if (user) {
-          let email = user.email;
-          let nic = email.split('@')[0].toUpperCase();
-          if(nic === "ADMIN") {
-              let snapshot = await fetch(`${DB_URL}/teachers/ADMIN.json`).then(r => r.json()); 
-              if(!snapshot) { grantAccess({name: "Super Admin", role: "System Admin", isSetupMode: true}, "ADMIN"); } 
-              else { grantAccess(snapshot, "ADMIN"); }
-          } else {
-              try {
-                  let tData = await apiCall('teachers/' + nic);
-                  if (tData && !tData.isFirstLogin) grantAccess(tData, nic);
-                  else if (tData && tData.isFirstLogin) {
-                      tempSetupNic = nic;
-                      document.getElementById('loginBox').style.display = 'none';
-                      document.getElementById('setupBox').style.display = 'flex';
-                  }
-                  else await firebase.auth().signOut();
-              } catch(e) {
-                  await firebase.auth().signOut();
-              }
-          }
-      } else {
-          document.getElementById('appLayout').style.display = 'none';
-          document.getElementById('setupBox').style.display = 'none';
-          document.getElementById('loginBox').style.display = 'flex';
-      }
-  });
-
   function grantAccess(data, nic) {
     currentUser = data; currentUser.nic = nic;
     document.getElementById('setupBox').style.display = 'none'; document.getElementById('loginBox').style.display = 'none'; document.getElementById('appLayout').style.display = 'flex';
