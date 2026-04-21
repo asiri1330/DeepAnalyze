@@ -2329,7 +2329,7 @@ async function generateClassMasterReport() {
  // ==========================================
   // PDF & CSV EXPORT 
   // ==========================================
-    window.downloadReportPDF = function() {
+  window.downloadReportPDF = function() {
     const data = window.currentReportData; if (!data) return alert("No report generated.");
     const schoolName = "R/Gankanda Central College"; 
     
@@ -2352,8 +2352,9 @@ async function generateClassMasterReport() {
     let repClass = data.cls || data.targetName || data.target || "";
     let repTeacher = data.ctName || (repClass && allClassesData[repClass] ? allClassesData[repClass].teacher : "..........................");
     
+    // සිංහල අකුරු සඳහා Iskoola Pota, Nirmala UI මෙහි එක් කර ඇත
     let commonStyles = `@page { size: A4 portrait; margin: 10mm; } 
-    * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, 'Iskoola Pota', 'Nirmala UI', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
     body { margin:0; text-transform: capitalize;} 
     .header { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; } 
     .header h1 { margin: 0; font-size: 18px; font-weight:900; text-transform: uppercase;} 
@@ -2372,7 +2373,7 @@ async function generateClassMasterReport() {
         
         let reportStyles = `<style>
         @page { size: A4 ${orientation}; margin: 10mm; } 
-        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, 'Iskoola Pota', 'Nirmala UI', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
         body { background: transparent; margin: 0; text-transform: capitalize;} 
         .page-break { page-break-after: always; } 
         .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; } 
@@ -2430,10 +2431,8 @@ async function generateClassMasterReport() {
                     });
                 });
                 
-                // වගු දෙක වෙන්ව දකුණු පසින් පෙන්වීම සඳහා Flex Container එක ආරම්භ කිරීම
                 finalHtml += `<div style="display: flex; gap: 40px; page-break-inside: avoid; margin-top: 30px; margin-bottom: 25px; align-items: flex-start;">`;
                 
-                // 1. Subject-wise Grade Summary (වම් පස වගුව)
                 finalHtml += `<div style="flex: 1;">
                               <h3 style="margin:0 0 10px 0; font-size:14px; text-transform:uppercase;">Subject-wise Grade Summary</h3>
                               <table class="official-table" style="margin-top:0; width:auto;">
@@ -2456,7 +2455,6 @@ async function generateClassMasterReport() {
                 
                 finalHtml += `</tbody></table></div>`;
                 
-                // 2. Pass Summary (දකුණු පස වගුව - Grade 10,11,12,13 සඳහා පමණි)
                 if(data.extraStats) {
                      let getScore = (str) => { let s = 0; str.split(' ').forEach(p => { let c=parseInt(p.replace(/[^0-9]/g, ''))||0; if(p.includes('A'))s+=c*10000; if(p.includes('B'))s+=c*1000; if(p.includes('C'))s+=c*100; if(p.includes('S'))s+=c*10; if(p.includes('W'))s-=c*10;}); return s; };
                      let allCombos = Array.from(new Set([...Object.keys(data.extraStats.classCombos), ...Object.keys(data.extraStats.secCombos)])).sort((a,b) => getScore(b) - getScore(a));
@@ -2474,9 +2472,7 @@ async function generateClassMasterReport() {
                      finalHtml += `</tbody></table></div>`;
                 }
                 
-                // Flex Container එක අවසන් කිරීම
                 finalHtml += `</div>`;
-                
                 finalHtml += `<div class="signature-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div></div>`;
             }
             finalHtml += `</div>`;
@@ -2506,7 +2502,7 @@ async function generateClassMasterReport() {
     else if(data.type === 'IndividualCards') {
         let finalHtml = `<html><head><style>
         @page { size: A4 portrait; margin: 15mm; } 
-        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, 'Iskoola Pota', 'Nirmala UI', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
         body { margin:0; text-transform: capitalize;} 
         .card { border: 2px solid #000; border-radius: 10px; padding: 25px; margin-bottom: 30px; height: 45%; box-sizing: border-box; page-break-inside: avoid;} 
         .header { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;} 
@@ -2572,7 +2568,7 @@ async function generateClassMasterReport() {
     else if (data.type === 'ALPrediction') {
         let finalHtml = `<html><head><style>
         @page { size: A4 portrait; margin: 15mm; } 
-        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Arial, 'Iskoola Pota', 'Nirmala UI', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
         body { margin:0;} 
         .header { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;} 
         .card { border: 1.5px solid #000; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; border-radius:5px;} 
@@ -2669,71 +2665,71 @@ async function generateClassMasterReport() {
         printWindow.document.write(finalHtml);
     }
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
+        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
+        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
 
-        let finalHtml = `<html><head><style>${commonStyles} 
-        .w-grade { color: #dc2626 !important; font-weight:900;} 
-        .s-grade { color: #d97706 !important; font-weight:bold;}
-        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
-        </style></head><body>
-        <div class="header">
-            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
-            <div style="text-align:left;">
-                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
-                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
-            </div>
-        </div>`;
+        let finalHtml = `<html><head><style>${commonStyles} 
+        .w-grade { color: #dc2626 !important; font-weight:900;} 
+        .s-grade { color: #d97706 !important; font-weight:bold;}
+        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
+        </style></head><body>
+        <div class="header">
+            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
+            <div style="text-align:left;">
+                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
+                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
+            </div>
+        </div>`;
 
-        finalHtml += `<div style="margin-bottom:20px; width:60%;">
-            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
-            <table class="stat-table">
-            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (< 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
-        
-        Object.keys(data.subjectStats).forEach(sub => {
-            let stat = data.subjectStats[sub];
-            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
-        });
-        finalHtml += `</tbody></table></div>`;
+        finalHtml += `<div style="margin-bottom:20px; width:60%;">
+            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
+            <table class="stat-table">
+            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (&lt; 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
+        
+        Object.keys(data.subjectStats).forEach(sub => {
+            let stat = data.subjectStats[sub];
+            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
+        });
+        finalHtml += `</tbody></table></div>`;
 
-        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
+        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
 
-        data.students.forEach(s => {
-            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
-            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
-        });
-        
-        // --- වෙනස් කළ කොටස: Signatures සඳහා Flexbox Space-between භාවිත කිරීම ---
-        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
-        finalHtml += `</tbody></table>
+        data.students.forEach(s => {
+            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
+            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
+        });
+        
+        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
+        finalHtml += `</tbody></table>
             <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                 <div class="sig-box" style="text-align: left;"><div class="sig-line"></div>${leftSigText}</div>
                 <div class="sig-box" style="text-align: right;"><div class="sig-line"></div>Principal / Vice Principal</div>
             </div>
         </body></html>`;
-        // -------------------------------------------------------------------------
         
-        printWindow.document.write(finalHtml);
-    }
+        printWindow.document.write(finalHtml);
+    }
+
     // --- PDF නාමය වෙනස් කිරීමේ ස්ථිරසාර ක්‍රමය (Strict Overwrite) ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-    let safeClassName = (data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    // නිවැරදි targetName අගය ලබා ගැනීම:
+    let safeClassName = (data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
     let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`.replace(/\s+/g, '_');
     
     printWindow.document.close(); 
     
-    // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
+    // Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
     let frameTitleTag = printWindow.document.querySelector('title');
     if (frameTitleTag) {
         frameTitleTag.innerText = fileName;
-    } else {
+    } else if (printWindow.document.head) {
         let newTitle = printWindow.document.createElement('title');
         newTitle.innerText = fileName;
         printWindow.document.head.appendChild(newTitle);
     }
 
-    // 2. ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
+    // ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
     let originalTitle = document.title;
     document.title = fileName;
     
@@ -2748,12 +2744,14 @@ async function generateClassMasterReport() {
   }
 
   // ==========================================
-  // PDF & CSV EXPORT 
+  // CSV EXPORT (Blob භාවිතයෙන් විශේෂ අක්ෂර දෝෂය නිවැරදි කර ඇත)
   // ==========================================
   window.exportReportToCSV = function() {
     const data = window.currentReportData; 
     if (!data) return alert("No report generated.");
-    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Excel හි සිංහල අකුරු නිවැරදිව පෙන්වීමට UTF-8 BOM (\uFEFF) එක් කිරීම
+    let csvContent = "\uFEFF";
 
     if(data.type === 'Class') {
         csvContent += `Class Master Sheet,Class: ${window.sanitizeText ? window.sanitizeText(data.cls) : data.cls},Term: ${data.year} ${data.term}\n\n`;
@@ -2846,13 +2844,22 @@ async function generateClassMasterReport() {
         });
     }
 
-    const encodedUri = encodeURI(csvContent);
+    // පැරණි encodeURI ක්‍රමය ඉවත්කර වඩාත් ආරක්ෂිත Blob ක්‍රමය භාවිතා කිරීම
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${data.type}_Report_${data.year}_${data.term}.csv`);
+    link.setAttribute("href", url);
+    
+    // නිවැරදි ෆයිල් නාමය සැකසීම
+    let safeClassName = (data.cls || data.targetName || data.target || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    let d = new Date();
+    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds();
+    link.setAttribute("download", `${data.type}_Report_${safeClassName}_${data.year || d.getFullYear()}_${timeString}.csv`);
+    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // මතකය නිදහස් කිරීම
   };
 
   // INITIALIZATION
