@@ -1271,6 +1271,35 @@ function routeReportGeneration(type) {
     else if(type === 'remedial_action_class') generateRemedialReport('class');
     else if(type === 'remedial_action_grade') generateRemedialReport('section');
 }
+    // --- Helper Function: Fetch students based on Class or Section scope ---
+  async function fetchReportDataByScope(yr, trm, target, scope) {
+      let mergedStudents = [];
+      let isALevelReport = false;
+      
+      if (scope === 'class') {
+          let res = await fetchAndCalculateClassMarks(yr, trm, target);
+          res.reportArray.forEach(s => s.className = target);
+          mergedStudents.push(...res.reportArray);
+          isALevelReport = res.isALevelReport;
+      } else {
+          let classesInGrade = Object.keys(allClassesData).filter(c => allClassesData[c].grade === target);
+          if (classesInGrade.length === 0) throw new Error("No classes found for this grade.");
+          
+          for (let cls of classesInGrade) {
+              try {
+                  let res = await fetchAndCalculateClassMarks(yr, trm, cls);
+                  res.reportArray.forEach(s => s.className = cls);
+                  mergedStudents.push(...res.reportArray);
+                  if (res.isALevelReport) isALevelReport = true;
+              } catch (e) {
+                  console.warn(`Skipping class ${cls} due to error:`, e);
+              }
+          }
+      }
+      
+      if (mergedStudents.length === 0) throw new Error("No student marks found.");
+      return { mergedStudents, isALevelReport };
+  }
 
   // --- අලුතින් එක් කරන ලද Top Achievers Renders ---
   async function generateTopAchievers() {
@@ -1877,16 +1906,7 @@ async function generateClassMasterReport() {
       let out = document.getElementById('reportOutputContainer'), htmlContainer = document.getElementById('reportHtmlContainer'); out.style.display = 'block'; htmlContainer.innerHTML = "<div style='text-align:center; padding:30px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:32px; color:var(--primary);'>sync</span></div>";
 
       try {
-          let mergedStudents = [];
-          if(scope === 'class') {
-              let res = await fetchAndCalculateClassMarks(yr, trm, target);
-              res.reportArray.forEach(s => s.className = target); mergedStudents.push(...res.reportArray);
-          } else {
-              let classesInGrade = Object.keys(allClassesData).filter(c => allClassesData[c].grade === target);
-              if(classesInGrade.length === 0) throw new Error("No classes found.");
-              for(let cls of classesInGrade) { try { let res = await fetchAndCalculateClassMarks(yr, trm, cls); res.reportArray.forEach(s => s.className = cls); mergedStudents.push(...res.reportArray); } catch(e) {} }
-          }
-          if(mergedStudents.length === 0) throw new Error("No student marks found.");
+          let { mergedStudents } = await fetchReportDataByScope(yr, trm, target, scope);
 
           let grouped = {};
           mergedStudents.forEach(s => { let combo = getComboStringAndScore(s); if(!grouped[combo.str]) grouped[combo.str] = { score: combo.score, students: [] }; grouped[combo.str].students.push(s); });
@@ -1928,16 +1948,7 @@ async function generateClassMasterReport() {
       out.style.display = 'block'; htmlContainer.innerHTML = "<div style='text-align:center; padding:30px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:32px; color:var(--primary);'>sync</span></div>";
 
       try {
-          let mergedStudents = [];
-          if(scope === 'class') {
-              let res = await fetchAndCalculateClassMarks(yr, trm, target);
-              res.reportArray.forEach(s => s.className = target); mergedStudents.push(...res.reportArray);
-          } else {
-              let classesInGrade = Object.keys(allClassesData).filter(c => allClassesData[c].grade === target);
-              if(classesInGrade.length === 0) throw new Error("No classes found.");
-              for(let cls of classesInGrade) { try { let res = await fetchAndCalculateClassMarks(yr, trm, cls); res.reportArray.forEach(s => s.className = cls); mergedStudents.push(...res.reportArray); } catch(e) {} }
-          }
-          if(mergedStudents.length === 0) throw new Error("No student marks found.");
+          let { mergedStudents } = await fetchReportDataByScope(yr, trm, target, scope);
 
           // වෙනස් කළ කොටස 1: ස්ථාවර විෂයන් වෙනුවට සියලුම විෂයන් ගතිකව (Dynamically) හඳුනා ගැනීම
           let subjectStats = {};
@@ -3006,38 +3017,28 @@ async function generateClassMasterReport() {
   }
 }
 
-  window.exportReportToCSV = function() {
-    const data = window.currentReportData; if (!data) return alert("No report generated.");
+ window.exportReportToCSV = function() {
+    const data = window.currentReportData; 
+    if (!data) return alert("No report generated.");
     let csvContent = "data:text/csv;charset=utf-8,";
 
     if(data.type === 'Class') {
-        csvContent += `Class Master Sheet,Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
+        csvContent += `Class Master Sheet,Class: ${sanitizeText(data.cls)},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
         data.students.forEach(s => {
-            let row = [`"${s.admNo}"`, `"${s.name}"`];
-            data.displayCols.forEach(col => { let cell = s.displayMarks[col]; let val = cell && cell.value !== undefined ? cell.value : "-"; row.push(`"${val}"`); });
+            let row = [
+                `"${sanitizeText(s.admNo)}"`, 
+                `"${sanitizeText(s.name).replace(/"/g, '""')}"`
+            ];
+            data.displayCols.forEach(col => { 
+                let cell = s.displayMarks[col]; 
+                let val = cell && cell.value !== undefined ? cell.value : "-"; 
+                row.push(`"${val}"`); 
+            });
             row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
             csvContent += row.join(',') + "\n";
         });
     }
-// ✅ AFTER (sanitized + escaped)
-else if(data.type === 'Class') {
-    csvContent += `Class Master Sheet,Class: ${sanitizeText(data.cls)},Term: ${data.year} ${data.term}\n\n`;
-    csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
-    data.students.forEach(s => {
-        let row = [
-            `"${sanitizeText(s.admNo)}"`, 
-            `"${sanitizeText(s.name).replace(/"/g, '""')}"` // Escape quotes
-        ];
-        data.displayCols.forEach(col => { 
-            let cell = s.displayMarks[col]; 
-            let val = cell && cell.value !== undefined ? cell.value : "-"; 
-            row.push(`"${val}"`); 
-        });
-        row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
-        csvContent += row.join(',') + "\n";
-    });
-}
     else if(data.type === 'Subject') {
         csvContent += `Subject Marks,Subject: ${data.subject},Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
         csvContent += `Adm No,Student Name,Marks,Grade\n`;
@@ -3055,8 +3056,7 @@ else if(data.type === 'Class') {
         let sortedCombos = Object.keys(data.combos).sort((a,b) => data.combos[b].score - data.combos[a].score);
         sortedCombos.forEach(combo => {
             let stds = data.combos[combo].students;
-            csvContent += `Combo: ${combo} (${stds.length} Students)\n`;
-            csvContent += `Adm No,Student Name,Class,Average\n`;
+            csvContent += `Combo: ${combo} (${stds.length} Students)\nAdm No,Student Name,Class,Average\n`;
             stds.forEach(s => { csvContent += `"${s.admNo}","${s.name}","${s.className || data.target}","${s.average}"\n`; });
             csvContent += `\n`;
         });
@@ -3072,37 +3072,22 @@ else if(data.type === 'Class') {
         });
     }
     else if (data.type === 'ClassStudentList') {
-        csvContent += `Class Student List,Class: ${data.cls}\n`;
-        csvContent += `Class Teacher: ${data.ctName},Total Students: ${data.students.length}\n\n`;
+        csvContent += `Class Student List,Class: ${data.cls}\nClass Teacher: ${data.ctName},Total Students: ${data.students.length}\n\n`;
         csvContent += `No,Adm No,Student Name,Gender,Contact Number\n`;
-        
         data.students.forEach((s, index) => {
             csvContent += `"${index + 1}","${s.admNo}","${s.name}","${s.gender || 'Male'}","${s.contact || '-'}"\n`;
         });
     }
     else if (data.type === 'ALPrediction') {
-        csvContent += `A/L AI Prediction,Class: ${data.cls}\n\n`;
+        csvContent += `A/L AI Prediction,Class: ${sanitizeText(data.cls)}\n\n`;
         csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
         data.students.forEach(s => {
-            csvContent += `"${s.admNo}","${s.name}","${s.avg}","${s.advice.title}","${s.advice.text.replace(/"/g, '""')}"\n`;
+            csvContent += `"${sanitizeText(s.admNo)}","${sanitizeText(s.name).replace(/"/g, '""')}","${s.avg}","${s.advice.title.replace(/"/g, '""')}","${s.advice.text.replace(/"/g, '""')}"\n`; 
         });
     }
-    // ✅ AFTER (properly escaped)
-    else if (data.type === 'ALPrediction') {
-    csvContent += `A/L AI Prediction,Class: ${sanitizeText(data.cls)}\n\n`;
-    csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
-    data.students.forEach(s => {
-        csvContent += `"${sanitizeText(s.admNo)}",` +
-                     `"${sanitizeText(s.name).replace(/"/g, '""')}",` +
-                     `"${s.avg}",` +
-                     `"${s.advice.title.replace(/"/g, '""')}",` +
-                     `"${s.advice.text.replace(/"/g, '""')}"\n`;  // Escaped!
-    });
-}
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
         let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\n`;
-        csvContent += `Core Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
+        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\nCore Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
         Object.keys(data.subjectStats).forEach(sub => {
             let stat = data.subjectStats[sub];
             if(stat.W > 0 || stat.S > 0) csvContent += `"${sub}","${stat.W}","${stat.S}"\n`;
@@ -3121,7 +3106,7 @@ else if(data.type === 'Class') {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+}
 
   // INITIALIZATION
   firebase.auth().onAuthStateChanged(async (user) => {
