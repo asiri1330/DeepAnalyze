@@ -997,38 +997,52 @@
   }
 
   window.saveMarks = async function() {
-    let yr = document.getElementById('yearSelect').value, trm = document.getElementById('termSelect').value, cls = document.getElementById('marksClassSelect').value, subKey = document.getElementById('marksSubjectSelect').value;
-    let isBucket = subKey.startsWith('BUCKET:::'); let actualBucketName = isBucket ? subKey.split(':::')[1] : null; let bucketSubjectsKeys = [];
+    let yr = document.getElementById('yearSelect').value, 
+        trm = document.getElementById('termSelect').value, 
+        cls = document.getElementById('marksClassSelect').value, 
+        subKey = document.getElementById('marksSubjectSelect').value;
+        
+    let isBucket = subKey.startsWith('BUCKET:::'); 
+    let actualBucketName = isBucket ? subKey.split(':::')[1] : null; 
     
-    if(isBucket) { bucketSubjectsKeys = Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName); } 
-    else { var sData = allSubjectsData[subKey] || {}; var mGradeType = sData.gradeType || 'ol_main'; var mBasket = sData.basketName || ""; }
+    // 1. විචල්‍යයන් if/else එකට ඉහළින් let හරහා declare කිරීම
+    let bucketSubjectsKeys = [];
+    let mGradeType = 'ol_main';
+    let mBasket = "";
 
-    let inputs = document.getElementsByClassName('mark-input'), updates = {}, msg = document.getElementById('saveMsg'), btn = document.getElementById('saveBtn');
-    
+    if(isBucket) { 
+        bucketSubjectsKeys = Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName); 
+    } 
+    else { 
+        // 2. මෙහිදී අගයන් පමණක් assign කිරීම සිදු කරයි (let භාවිත නොකරයි)
+        let sData = allSubjectsData[subKey] || {}; 
+        mGradeType = sData.gradeType || 'ol_main'; 
+        mBasket = sData.basketName || ""; 
+    }
+
+    let inputs = document.getElementsByClassName('mark-input'), 
+        updates = {}, 
+        msg = document.getElementById('saveMsg'), 
+        btn = document.getElementById('saveBtn');
+
     for(let i=0; i<inputs.length; i++) { 
         let val = inputs[i].value.trim().toUpperCase(), admNo = inputs[i].id.split('_')[1]; 
         
-        // --- මෙහිදී හිස් තීරු (Blank) "AB" ලෙස ස්වයංක්‍රීයව සටහන් වේ ---
         if (val === "" || val === "ABSENT") {
             val = "AB";
-            inputs[i].value = "AB"; // UI එකෙහිද යාවත්කාලීන වීම සඳහා
+            inputs[i].value = "AB"; 
         }
 
         if (val !== "AB") {
             let numMark = Number(val);
-            
-            // අංකයක් නොවේ නම් හෝ අගය 0-100 අතර නොමැති නම්
             if (isNaN(numMark) || numMark < 0 || numMark > 100) {
-                // වැරදි කොටුව රතු පාටින් Highlight කර පෙන්වීම
                 inputs[i].style.borderColor = "var(--danger)"; 
                 inputs[i].style.backgroundColor = "#fef2f2";
-                inputs[i].focus(); // ගුරුවරයාට පහසුවෙන් හදාගන්න කොටුවට focus කිරීම
-                
+                inputs[i].focus(); 
                 btn.disabled = false;
                 msg.innerText = "";
                 return alert(`Invalid mark for Admission No: ${admNo}!\n\nMarks must be strictly between 0 and 100 (or 'AB' for Absent).`);
             }
-            // නිවැරදි නම් ආපසු සාමාන්‍ය පාටට හැරවීම (කලින් වැරදිලා හදාගත්තා නම්)
             inputs[i].style.borderColor = "#cbd5e1";
             inputs[i].style.backgroundColor = "#ffffff";
         }
@@ -1036,21 +1050,27 @@
         if(isBucket) {
             let sel = document.getElementById(`bsel_${admNo}`); let selectedSubKey = sel ? sel.value : "";
             bucketSubjectsKeys.forEach(k => { updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; });
-            // val හිස් නොවන බැවින් (අවම වශයෙන් AB හෝ ඇති බැවින්)
             if(selectedSubKey) { 
                 updates[`marks/${yr}/${trm}/${admNo}/${selectedSubKey}`] = val; 
                 updates[`class_subjects/${yr}/${trm}/${cls}/${selectedSubKey}`] = { grade: allSubjectsData[selectedSubKey].gradeType, type: 'basket', basketName: actualBucketName }; 
             }
         } else {
             updates[`marks/${yr}/${trm}/${admNo}/${subKey}`] = val; 
+            // 3. ඉහතින් හඳුන්වා දුන් mGradeType සහ mBasket මෙහිදී කිසිදු ගැටළුවකින් තොරව භාවිත කළ හැක
             updates[`class_subjects/${yr}/${trm}/${cls}/${subKey}`] = { grade: mGradeType, type: (mGradeType.includes('basket') || mGradeType.includes('common') || mBasket !== "") ? 'basket' : 'main', basketName: mBasket || "" }; 
         }
     }
     
     btn.disabled = true; msg.style.color = "var(--primary)"; msg.innerText = "Saving..."; 
-    try { await apiCall('', 'PATCH', updates); btn.disabled = false; msg.style.color = "var(--success)"; msg.innerText = "Marks Saved Successfully!"; setTimeout(()=>msg.innerText="",3000); } 
-    catch(e){ btn.disabled=false; msg.style.color="var(--danger)"; msg.innerText="Error Saving!";}
-  }
+    try { 
+        await apiCall('', 'PATCH', updates); 
+        btn.disabled = false; msg.style.color = "var(--success)"; msg.innerText = "Marks Saved Successfully!"; 
+        setTimeout(()=>msg.innerText="",3000); 
+    } 
+    catch(e){ 
+        btn.disabled=false; msg.style.color="var(--danger)"; msg.innerText="Error Saving!";
+    }
+}
 
   // --- අලුතින් එක් කළ Delete Functions ---
   
