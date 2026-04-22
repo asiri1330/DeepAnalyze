@@ -1651,7 +1651,6 @@ async function generateClassMasterReport() {
 
           window.currentReportData = { year: yr, term: trm, cls: cls, ctName: ctName, displayCols: displayCols, students: reportArray, type: 'Class', isALevel: isALevelReport, extraStats: extraStats };
 
-          // Build Subject Tallies (Subject-wise Range Count)
           let subjectTallies = {};
           displayCols.forEach(col => { subjectTallies[col] = { 'A':0, 'B':0, 'C':0, 'S':0, 'W':0, 'AB':0 }; });
           
@@ -1671,23 +1670,31 @@ async function generateClassMasterReport() {
               });
           });
 
+          // --- වෙනස් කරන ලද බොත්තම් අඩංගු HTML කොටස ---
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                         <div><h3 style="margin:0; color:var(--primary); font-size:24px; font-weight:900;">Class Master Sheet</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Teacher: <span style="color:var(--text-main);">${ctName}</span> | Term: ${yr} ${trm}</p></div>
-                        <div style='display:flex; gap:12px;'>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                        <div style='display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;'>
+                            <button class='btn-danger btn-small' style='background-color:#991b1b; border:none; padding:8px 15px;' onclick='downloadOnlyClassMasterPDF()'>
+                                <span class="material-symbols-outlined icon-small">view_list</span> Download Master ONLY
+                            </button>
+                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'>
+                                <span class="material-symbols-outlined icon-small">picture_as_pdf</span> Full PDF
+                            </button>
+                            <button class='btn-success btn-small' onclick='exportReportToCSV()'>
+                                <span class="material-symbols-outlined icon-small">table_view</span> CSV
+                            </button>
                         </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px;">Adm No</th><th style="width:200px; white-space:nowrap;">Student Name</th>`;
+          // --------------------------------------------------
+
           displayCols.forEach(c => html += `<th style="text-align:center;">${c}</th>`);
           html += `<th style="text-align:center;">Total</th><th style="text-align:center;">${isALevelReport ? 'Z-Score' : 'Average'}</th><th style="text-align:center;">Rank</th></tr></thead><tbody>`;
           
           reportArray.forEach(s => { html += `<tr><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; white-space:normal; color:var(--text-main);">${s.name}</td>`; displayCols.forEach(col => { let cellData = s.displayMarks[col]; let val = cellData && cellData.value !== undefined ? cellData.value : "-"; if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) val += `<br><span style="font-size:11px; color:var(--text-muted); font-weight:600;">(${cellData.actualSubjCode || cellData.actualSubj})</span>`; html += `<td style='text-align:center; font-weight:600; white-space:nowrap;'>${val}</td>`; }); html += `<td style='text-align:center; font-weight:800;'>${s.total}</td><td style='text-align:center; font-weight:800; color:var(--primary);'>${isALevelReport ? s.overallZ : s.average}</td><td style='text-align:center; font-weight:900; color:var(--success); font-size:16px;'>${s.rank}</td></tr>`; });
           
-          // Close Main Table
           html += `</tbody></table>`;
 
-          // NEW SEPARATE TABLE: Subject-wise Grade Summary (Width Auto & Left Aligned)
           html += `<div style="margin-top:35px; margin-bottom:20px;">
                     <h4 style="margin:0 0 12px 0; font-size:16px; font-weight:800; color:var(--text-main);">Subject-wise Grade Summary</h4>
                     <div style="overflow-x: auto;">
@@ -2878,7 +2885,126 @@ async function generateClassMasterReport() {
         // Print තිරය පැමිණි පසු නැවත පරණ නම යථා තත්ත්වයට පත් කිරීම
         setTimeout(() => { document.title = originalTitle; }, 2000);
     }, 1000);
+// ==========================================
+  // NEW: Download ONLY the Class Master Sheet PDF (Without Summary Tables)
+  // ==========================================
+  window.downloadOnlyClassMasterPDF = function() {
+      const data = window.currentReportData; 
+      if (!data || data.type !== 'Class') return alert("Please generate the Class Master Report first.");
+      
+      const schoolName = "R/Gankanda Central College"; 
+      
+      let oldIframe = document.getElementById('mobilePrintFrame');
+      if (oldIframe) { oldIframe.remove(); } 
+
+      let iframe = document.createElement('iframe');
+      iframe.id = 'mobilePrintFrame';
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0px';
+      iframe.style.height = '0px';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+      
+      const printWindow = iframe.contentWindow;
+      
+      let repClass = data.cls || "";
+      let repTeacher = data.ctName || "..........................";
+      
+      const isLandscape = data.displayCols.length > 8; 
+      const orientation = isLandscape ? 'landscape' : 'portrait'; 
+      const studentsPerPage = isLandscape ? 30 : 40; 
+      
+      let reportStyles = `<style>
+      @page { size: A4 ${orientation}; margin: 10mm; } 
+      * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+      body { background: transparent; margin: 0; text-transform: capitalize;} 
+      .page-break { page-break-after: always; } 
+      .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; } 
+      .header-container h1 { margin: 0; font-size: 18px; font-weight:900; text-transform: uppercase;} 
+      .header-container h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: bold;} 
+      .info-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; font-size: 11px;} 
+      .official-table { width: 100%; border-collapse: collapse; table-layout: auto; } 
+      .official-table th, .official-table td { border: 1px solid #000 !important; padding: 5px; text-align: left !important; font-size: 10px; font-weight:bold; vertical-align: middle; } 
+      .official-table th { background-color: transparent !important; vertical-align: bottom; font-weight:bold !important; border-bottom: 1.5px solid #000 !important; text-transform:uppercase; white-space: nowrap; } 
+      .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: 4px; font-size:10px; white-space:nowrap; text-align: left !important;} 
+      .signature-section { display: flex; justify-content: space-between; margin-top: 30px; page-break-inside: avoid;} 
+      .sig-box { text-align: center; width: 30%; font-weight: bold; font-size: 11px;} 
+      .sig-line { border-top: 1px dashed #000; margin-bottom: 5px; width: 80%; margin-left: auto; margin-right: auto; } 
+      </style>`;
+      
+      let logoSvg = typeof SYS_LOGO_SVG !== 'undefined' ? SYS_LOGO_SVG : '';
+      let finalHtml = `<html><head>${reportStyles}</head><body>`;
+      
+      for (let i = 0; i < data.students.length; i += studentsPerPage) {
+          const studentChunk = data.students.slice(i, i + studentsPerPage); 
+          const isLastPage = (i + studentsPerPage) >= data.students.length;
+          
+          finalHtml += `<div class="${!isLastPage ? 'page-break' : ''}">
+              <div class="header-container">
+                  <div style="width: 70px; height: 70px;">${logoSvg}</div>
+                  <div style="text-align:left;">
+                      <h1>${schoolName}</h1>
+                      <h2>Class Master Report (Only) - ${data.year} ${data.term}</h2>
+                  </div>
+              </div>
+              <div class="info-row">
+                  <span style="text-align:left;">Class: ${repClass}</span>
+                  <span style="text-align:right;">Class Teacher: ${repTeacher}</span>
+              </div>
+              <table class="official-table">
+                  <thead>
+                      <tr><th style="width:1%;">Adm No</th><th style="width:99%;">Student Name</th>`;
+          
+          data.displayCols.forEach(c => finalHtml += `<th><span class="vertical-text">${c}</span></th>`);
+          finalHtml += `<th><span class="vertical-text">Total</span></th>`;
+          if(data.isALevel) finalHtml += `<th><span class="vertical-text">Z-Score</span></th>`; else finalHtml += `<th><span class="vertical-text">Average</span></th>`;
+          finalHtml += `<th><span class="vertical-text">Rank</span></th></tr></thead><tbody>`;
+          
+          studentChunk.forEach(s => {
+              finalHtml += `<tr><td>${s.admNo}</td><td style="white-space:normal;">${s.name}</td>`;
+              data.displayCols.forEach(col => { 
+                  let cellData = s.displayMarks[col]; 
+                  let val = cellData && cellData.value !== undefined ? cellData.value : "-"; 
+                  if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) { 
+                      val += ` (${cellData.actualSubjCode || cellData.actualSubj})`; 
+                  } 
+                  finalHtml += `<td>${val}</td>`; 
+              });
+              finalHtml += `<td>${s.total}</td><td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.rank}</td></tr>`;
+          });
+          
+          finalHtml += `</tbody></table>`;
+          
+          if(isLastPage) {
+              // වෙනත් කිසිදු Summary Table එකක් අඩංගු නොවේ. අත්සන් කිරීමේ තීරුව පමණක් එක් වේ.
+              finalHtml += `<div class="signature-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div></div>`;
+          }
+          finalHtml += `</div>`;
+      }
+      finalHtml += `</body></html>`; 
+      
+      printWindow.document.write(finalHtml);
+      
+      let d = new Date();
+      let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
+      let safeClassName = (data.cls || 'Report').replace(/\s+/g, '_');
+      let fileName = `Class_Master_ONLY_${safeClassName}_${data.year}_${data.term}_${timeString}`;
+      
+      printWindow.document.close(); 
+      let newTitle = printWindow.document.createElement('title');
+      newTitle.innerText = fileName;
+      printWindow.document.head.appendChild(newTitle);
+
+      let originalTitle = document.title;
+      document.title = fileName;
+      
+      setTimeout(() => { 
+          printWindow.focus();
+          printWindow.print(); 
+          setTimeout(() => { document.title = originalTitle; }, 2000);
+      }, 1000);
   }
+}
 
   window.exportReportToCSV = function() {
     const data = window.currentReportData; if (!data) return alert("No report generated.");
