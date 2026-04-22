@@ -3116,24 +3116,28 @@ async function generateClassMasterReport() {
   window.validateMarkInput = function(input) {
       let val = input.value.toUpperCase();
       
-      // 'A' සහ 'B' අකුරු දෙක හැර වෙනත් ඉංග්‍රීසි අකුරු සහ සංකේත මැකීම (Numbers පමණක් ඉතිරි කිරීම)
+      // 1. වලංගු නොවන අකුරු සහ සංකේත මැකීම (Absent කේත සඳහා හැර)
       if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
-          input.value = val.replace(/[^0-9]/g, ''); // අංක පමණක් ඉතිරි කරයි
+          // ඉලක්කම් (0-9) හැර වෙනත් කුමන හෝ අකුරක් හෝ සංකේතයක් ඇත්නම් එය ස්වයංක්‍රීයව මකා දමයි
+          let cleanVal = val.replace(/[^0-9]/g, '');
+          input.value = cleanVal;
+      } else {
+          input.value = val;
       }
 
-      // 100 ට වඩා වැඩිනම් ස්වයංක්‍රීයව 100 බවට පත් කිරීම
+      // 2. ඇතුළත් කළ අගය 0 ත් 100 ත් අතර දැයි පරීක්ෂා කිරීම
       if (input.value !== "") {
           let numMark = Number(input.value);
           if (!isNaN(numMark)) {
               if (numMark > 100) {
-                  input.value = 100; 
+                  input.value = 100; // 100ට වඩා වැඩි නම් ස්වයංක්‍රීයව 100 බවට පත් කරයි
               } else if (numMark < 0) {
-                  input.value = 0;
+                  input.value = 0;   // ඍණ අගයක් නම් 0 බවට පත් කරයි
               }
           }
       }
       
-      // Type කරනකොට Highlight වෙලා තියෙන රතු පාට අයින් කිරීම
+      // 3. දත්ත නිවැරදි කරගත් පසු Error Highlight වී ඇත්නම් එය සාමාන්‍ය තත්ත්වයට පත් කිරීම
       input.style.borderColor = "var(--primary)";
       input.style.backgroundColor = "#eff6ff";
   };
