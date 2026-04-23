@@ -966,7 +966,7 @@
     for(let i=0; i<inputs.length; i++) { 
         let val = inputs[i].value.trim().toUpperCase(), admNo = inputs[i].id.split('_')[1]; 
         
-        if (val === "" || val === "ABSENT") {
+       if (val === "" || val === "ABS" || val === "ABSENT") {
             val = "AB";
             inputs[i].value = "AB"; 
         }
@@ -1431,8 +1431,20 @@ function routeReportGeneration(type) {
 
   // --- CORE CALCULATION ENGINE ---
   async function fetchAndCalculateClassMarks(yr, trm, cls) {
-      let classMeta = await apiCall(`class_subjects/${yr}/${trm}/${cls}`) || {}; 
-      let classSts = Object.keys(allStudentsData).filter(k => allStudentsData[k].class === cls).map(k => ({admNo: k, ...allStudentsData[k]})); 
+      let classMeta = await apiCall(`class_subjects/${yr}/${trm}/${cls}`) || {};
+      
+      // අලුත් කේතය: Database එකෙන් කෙලින්ම අදාළ පන්තියේ සිසුන් පමණක් ලබා ගැනීම
+      let queryParams = `?orderBy="class"&equalTo="${cls}"`;
+      let fetchedSts = await apiCall('students', 'GET', null, queryParams);
+      let classSts = [];
+      if(fetchedSts) {
+          classSts = Object.keys(fetchedSts).map(k => {
+              let s = {admNo: k, ...fetchedSts[k]};
+              let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
+              s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
+              return s;
+          });
+      }
       if(classSts.length === 0) throw new Error("No students found in class: " + cls);
       
       let marksData = {};
