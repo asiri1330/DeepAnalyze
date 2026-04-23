@@ -20,7 +20,7 @@
     const SYS_LOGO_SVG = `<img src="https://i.ibb.co/nWMHnRP/School-Logo-GCC-Transparency.png" crossorigin="anonymous" style="width:100%; height:100%; object-fit:contain;">`;
     // XSS ප්‍රහාර වැළැක්වීමේ ශ්‍රිතය
     window.sanitizeText = function(str) {
-        if (!str) return ""; // දත්ත නොමැති නම් හිස් අගයක් ලබා දෙයි
+        if (!str) return ""; 
             let temp = document.createElement('div');
             temp.textContent = str; // මෙහිදී අනිෂ්ට HTML කේත සාමාන්‍ය අකුරු බවට පත් වේ (උදා: < යන්න &lt; බවට පත්වේ)
         return temp.innerHTML;
