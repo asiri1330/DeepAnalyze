@@ -2034,9 +2034,21 @@ async function generateClassMasterReport() {
       let out = document.getElementById('reportOutputContainer'), htmlContainer = document.getElementById('reportHtmlContainer'); out.style.display = 'block'; htmlContainer.innerHTML = "<div style='text-align:center; padding:40px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:40px; color:var(--primary);'>memory</span><br><h3 style='color:var(--text-main); margin-top:15px;'>AI is thinking...</h3></div>";
 
       try {
-          let marksDB = await fetchWithCache(`marks`, false) || {}; 
-          let classStsKeys = Object.keys(allStudentsData).filter(k => allStudentsData[k].class === cls);
-          let classSts = classStsKeys.map(k => ({admNo: k, ...allStudentsData[k]})); if(classSts.length === 0) throw new Error("No students found.");
+        let marksDB = await fetchWithCache(`marks`, false) || {}; 
+      
+      // Database එකෙන් කෙලින්ම අදාළ පන්තියේ සිසුන් පමණක් ලබා ගැනීම
+      let queryParams = `?orderBy="class"&equalTo="${cls}"`;
+      let fetchedSts = await apiCall('students', 'GET', null, queryParams);
+      let classSts = [];
+      if(fetchedSts) {
+          classSts = Object.keys(fetchedSts).map(k => {
+              let s = {admNo: k, ...fetchedSts[k]};
+              let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
+              s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
+              return s;
+          });
+      }
+      if(classSts.length === 0) throw new Error("No students found in this class.");
           
           let predictData = []; let allSubjectsUsed = new Set();
           classSts.forEach(s => {
@@ -2095,9 +2107,20 @@ async function generateClassMasterReport() {
 
       try {
           let marksDB = await fetchWithCache(`marks`, false) || {}; let classMetaDB = await fetchWithCache(`class_subjects`, false) || {};
-          let classStsKeys = Object.keys(allStudentsData).filter(k => allStudentsData[k].class === cls);
-          let classSts = classStsKeys.map(k => ({admNo: k, ...allStudentsData[k]})); if(classSts.length === 0) throw new Error("No students found.");
-          
+      
+      // Database එකෙන් කෙලින්ම අදාළ පන්තියේ සිසුන් පමණක් ලබා ගැනීම
+      let queryParams = `?orderBy="class"&equalTo="${cls}"`;
+      let fetchedSts = await apiCall('students', 'GET', null, queryParams);
+      let classSts = [];
+      if(fetchedSts) {
+          classSts = Object.keys(fetchedSts).map(k => {
+              let s = {admNo: k, ...fetchedSts[k]};
+              let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
+              s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
+              return s;
+          });
+      }
+      if(classSts.length === 0) throw new Error("No students found in this class.");
           let predictData = [];
           
           classSts.forEach(s => {
