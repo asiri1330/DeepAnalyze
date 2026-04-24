@@ -1916,24 +1916,72 @@ async function generateClassMasterReport() {
   }
 
   async function generateSubjectReport() {
-    let yr = document.getElementById('repYear').value, trm = document.getElementById('repTerm').value, cls = document.getElementById('repClass').value, subKey = document.getElementById('repSubject').value;
-    if(!cls || !subKey) return alert("Select Class and Subject."); let btn = document.getElementById('btnGenerateReport'); btn.innerHTML = "Processing..."; btn.disabled = true;
-    let out = document.getElementById('reportOutputContainer'), htmlContainer = document.getElementById('reportHtmlContainer'); out.style.display = 'block'; htmlContainer.innerHTML = "<div style='text-align:center; padding:30px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:32px; color:var(--primary);'>sync</span></div>";
+    let yr = document.getElementById('repYear').value, 
+        trm = document.getElementById('repTerm').value, 
+        cls = document.getElementById('repClass').value, 
+        subKey = document.getElementById('repSubject').value;
+    
+    if(!cls || !subKey) return alert("Select Class and Subject."); 
+    let btn = document.getElementById('btnGenerateReport'); 
+    btn.innerHTML = "Processing..."; 
+    btn.disabled = true;
+    
+    let out = document.getElementById('reportOutputContainer'), 
+        htmlContainer = document.getElementById('reportHtmlContainer'); 
+    out.style.display = 'block'; 
+    htmlContainer.innerHTML = "<div style='text-align:center; padding:30px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:32px; color:var(--primary);'>sync</span></div>";
+    
     try {
-      let marksData = {}; let classStsKeys = Object.keys(allStudentsData).filter(k => allStudentsData[k].class === cls); let classSts = classStsKeys.map(k => ({admNo: k, ...allStudentsData[k]}));
-      let fetchProms = classSts.map(async s => { let m = await apiCall(`marks/${yr}/${trm}/${s.admNo}`); if(m) marksData[s.admNo] = m; });
-      await Promise.all(fetchProms);
+      // 1. අදාළ පන්තියේ සිසුන් Database එකෙන් ලබා ගැනීම (allStudentsData මත රඳා නොපවතී)
+      let queryParams = `?orderBy="class"&equalTo="${cls}"`;
+      let fetchedSts = await apiCall('students', 'GET', null, queryParams);
+      let classSts = [];
+      if(fetchedSts) {
+          classSts = Object.keys(fetchedSts).map(k => {
+              let s = {admNo: k, ...fetchedSts[k]};
+              let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
+              s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
+              return s;
+          });
+      }
+      if (classSts.length === 0) throw new Error("No students found in this class.");
+
+      // 2. අදාළ වසරේ සහ වාරයේ ලකුණු Cache හරහා ලබා ගැනීම (වේගවත් කිරීම සඳහා)
+      let marksData = {}; 
+      let allMarksForTerm = await fetchWithCache(`marks/${yr}/${trm}`, false) || {};
+      classSts.forEach(st => { 
+          if(allMarksForTerm[st.admNo]) marksData[st.admNo] = allMarksForTerm[st.admNo]; 
+      });
       
-      classSts.sort((a,b) => { let gA = a.gender === 'Female' ? 1 : 0; let gB = b.gender === 'Female' ? 1 : 0; if (gA !== gB) return gA - gB; return a.admNo.localeCompare(b.admNo, undefined, {numeric: true}); });
+      // සිසුවියන් සහ සිසුන් වෙනම ගෙන Admission අංකය අනුව පෙළගැස්වීම
+      classSts.sort((a,b) => { 
+          let gA = a.gender === 'Female' ? 1 : 0; 
+          let gB = b.gender === 'Female' ? 1 : 0; 
+          if (gA !== gB) return gA - gB; 
+          return a.admNo.localeCompare(b.admNo, undefined, {numeric: true}); 
+      });
 
       let reportArray = []; 
+      let passCount = 0, failCount = 0, totalMarks = 0, validCount = 0;
+
       classSts.forEach(s => {  
-      let mk = (marksData[s.admNo] && marksData[s.admNo][subKey] !== undefined && marksData[s.admNo][subKey] !== null && marksData[s.admNo][subKey] !== "") ? marksData[s.admNo][subKey] : "-"; 
-      // ලකුණු ඇතුළත් කර ඇති සිසුන් පමණක් ලැයිස්තුවට එක් කිරීම
-      if (mk !== "-") { 
-        reportArray.push({ admNo: s.admNo, name: s.name, mark: mk, grade: getGr(mk) }); 
-      } 
-    });
+        let mk = (marksData[s.admNo] && marksData[s.admNo][subKey] !== undefined && marksData[s.admNo][subKey] !== null && marksData[s.admNo][subKey] !== "") ? marksData[s.admNo][subKey] : "-"; 
+        
+        // ලකුණු ඇතුළත් කර ඇති සිසුන් පමණක් ලැයිස්තුවට එක් කිරීම
+        if (mk !== "-") { 
+          reportArray.push({ admNo: s.admNo, name: s.name, mark: mk, grade: getGr(mk) }); 
+          
+          if(mk !== "AB") {
+              let mVal = Number(mk);
+              if(!isNaN(mVal)) {
+                  totalMarks += mVal;
+                  validCount++;
+                  if(mVal >= 35) passCount++; else failCount++;
+              }
+          }
+        } 
+      });
+
       let actualSubjName = allSubjectsData[subKey] ? allSubjectsData[subKey].name : "Unknown Subject";
       window.currentReportData = { year: yr, term: trm, cls: cls, subject: actualSubjName, students: reportArray, type: 'Subject' };
       
@@ -1943,11 +1991,39 @@ async function generateClassMasterReport() {
                         <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
                         <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
                     </div>
-                  </div>
-                  <table class='ui-data-table'><thead><tr><th style="width:100px;">Adm No</th><th style="white-space:nowrap;">Student Name</th><th style="text-align:center;">Marks</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
-      reportArray.forEach(s => { html += `<tr><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; white-space:nowrap; color:var(--text-main);">${s.name}</td><td style="text-align:center; font-weight:800; font-size:16px;">${s.mark}</td><td style="text-align:center; color:var(--primary); font-weight:900; font-size:16px;">${s.grade}</td></tr>`; });
-      html += `</tbody></table>`; htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-    } catch(err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
+                  </div>`;
+                  
+      if (reportArray.length === 0) {
+          html += `<div style="text-align:center; padding:20px; font-weight:bold; color:var(--danger);">No marks have been entered for this subject yet.</div>`;
+      } else {
+          html += `<table class='ui-data-table'><thead><tr><th style="width:100px;">Adm No</th><th style="white-space:nowrap;">Student Name</th><th style="text-align:center;">Marks</th><th style="text-align:center;">Grade</th></tr></thead><tbody>`;
+          reportArray.forEach(s => { 
+              html += `<tr><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; white-space:nowrap; color:var(--text-main);">${s.name}</td><td style="text-align:center; font-weight:800; font-size:16px;">${s.mark}</td><td style="text-align:center; color:var(--primary); font-weight:900; font-size:16px;">${s.grade}</td></tr>`; 
+          });
+          html += `</tbody></table>`;
+          
+          // පන්තියේ සාමාන්‍යය (Class Average) සහ සමත් ප්‍රතිශතය පෙන්වීම
+          if(validCount > 0) {
+              let classAvg = (totalMarks / validCount).toFixed(2);
+              let passPct = ((passCount / validCount) * 100).toFixed(1);
+              html += `<div style="margin-top:20px; padding:15px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-wrap:wrap; gap:20px; justify-content:space-around;">
+                          <div style="text-align:center;"><p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Class Average</p><h4 style="margin:5px 0 0 0; color:var(--primary); font-size:18px; font-weight:900;">${classAvg}</h4></div>
+                          <div style="text-align:center;"><p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Pass Percentage</p><h4 style="margin:5px 0 0 0; color:#10b981; font-size:18px; font-weight:900;">${passPct}%</h4></div>
+                          <div style="text-align:center;"><p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Passed (>=35)</p><h4 style="margin:5px 0 0 0; color:#10b981; font-size:18px; font-weight:900;">${passCount}</h4></div>
+                          <div style="text-align:center;"><p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Failed (<35)</p><h4 style="margin:5px 0 0 0; color:#ef4444; font-size:18px; font-weight:900;">${failCount}</h4></div>
+                       </div>`;
+          }
+      }
+      
+      htmlContainer.innerHTML = html; 
+      btn.disabled = false; 
+      btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+      
+    } catch(err) { 
+        htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; 
+        btn.disabled = false; 
+        btn.innerHTML = `Generate Report`;
+    }
   }
 
   async function generatePassesSummary(scope) {
