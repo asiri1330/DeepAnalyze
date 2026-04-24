@@ -2034,23 +2034,27 @@ async function generateClassMasterReport() {
       let out = document.getElementById('reportOutputContainer'), htmlContainer = document.getElementById('reportHtmlContainer'); out.style.display = 'block'; htmlContainer.innerHTML = "<div style='text-align:center; padding:40px;'><span class='material-symbols-outlined' style='animation: spin 1s linear infinite; font-size:40px; color:var(--primary);'>memory</span><br><h3 style='color:var(--text-main); margin-top:15px;'>AI is thinking...</h3></div>";
 
       try {
-        let marksDB = await fetchWithCache(`marks`, false) || {}; 
-      
-      // Database එකෙන් කෙලින්ම අදාළ පන්තියේ සිසුන් පමණක් ලබා ගැනීම
-      let queryParams = `?orderBy="class"&equalTo="${cls}"`;
-      let fetchedSts = await apiCall('students', 'GET', null, queryParams);
-      let classSts = [];
-      if(fetchedSts) {
-          classSts = Object.keys(fetchedSts).map(k => {
-              let s = {admNo: k, ...fetchedSts[k]};
-              let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
-              s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
-              return s;
-          });
-      }
-      if(classSts.length === 0) throw new Error("No students found in this class.");
+          let marksDB = await fetchWithCache(`marks`, false) || {};
           
-          let predictData = []; let allSubjectsUsed = new Set();
+          // Database එකෙන් කෙලින්ම අදාළ පන්තියේ සිසුන් පමණක් ලබා ගැනීම
+          let queryParams = `?orderBy="class"&equalTo="${cls}"`;
+          let fetchedSts = await apiCall('students', 'GET', null, queryParams);
+          let classSts = [];
+          if(fetchedSts) {
+              classSts = Object.keys(fetchedSts).map(k => {
+                  let s = {admNo: k, ...fetchedSts[k]};
+                  let rawGen = s.gender ? s.gender.trim().toLowerCase() : 'male';
+                  s.gender = (rawGen === 'female' || rawGen === 'girl' || rawGen === 'f') ? 'Female' : 'Male';
+                  return s;
+              });
+          }
+          if(classSts.length === 0) throw new Error("No students found in this class.");
+          
+          let predictData = []; 
+          let allSubjectsUsed = new Set();
+          let studentHistories = {};
+
+          // 1. සියලු සිසුන්ගේ පෙර ලකුණු සහ භාවිතා කළ විෂයයන් සොයා ගැනීම
           classSts.forEach(s => {
               let subHistory = {};
               Object.keys(marksDB).forEach(yr => {
@@ -2058,24 +2062,74 @@ async function generateClassMasterReport() {
                     let stMarks = marksDB[yr][trm][s.admNo];
                     if(stMarks) {
                         Object.keys(stMarks).forEach(subK => {
-                           let m = stMarks[subK]; if(m !== "AB" && m !== undefined && !isNaN(m)) { if(!subHistory[subK]) subHistory[subK] = []; subHistory[subK].push(Number(m)); allSubjectsUsed.add(subK); }
+                           let m = stMarks[subK]; 
+                           if(m !== "AB" && m !== undefined && !isNaN(m)) { 
+                               if(!subHistory[subK]) subHistory[subK] = []; 
+                               subHistory[subK].push(Number(m)); 
+                               allSubjectsUsed.add(subK); 
+                           }
                         });
                     }
                  });
               });
-              
-              let predictedMarks = {}; let totalP = 0; let countP = 0;
-              Object.keys(subHistory).forEach(subK => { let arr = subHistory[subK]; let avg = arr.reduce((a,b)=>a+b,0)/arr.length; predictedMarks[subK] = Math.round(avg); totalP+=predictedMarks[subK]; countP++; });
+              studentHistories[s.admNo] = subHistory;
+          });
+
+          // 2. විෂයයන් Main සහ Basket ලෙස වෙන් කර Columns සැකසීම
+          let mainCols = [];
+          let basketCols = [];
+          let subKeyToColMap = {};
+
+          Array.from(allSubjectsUsed).forEach(subK => {
+              let sData = allSubjectsData[subK] || {};
+              let sName = sData.name || subK;
+              let bName = sData.basketName || "";
+
+              if (bName) {
+                  if (!basketCols.includes(bName)) basketCols.push(bName);
+                  subKeyToColMap[subK] = { col: bName, actualName: sName };
+              } else {
+                  if (!mainCols.includes(sName)) mainCols.push(sName);
+                  subKeyToColMap[subK] = { col: sName, actualName: sName };
+              }
+          });
+
+          mainCols.sort((a,b) => a.localeCompare(b));
+          basketCols.sort((a,b) => a.localeCompare(b));
+          let displayCols = [...mainCols, ...basketCols];
+
+          // 3. සිසුන්ගේ අනුමාන ලකුණු (Predicted Marks) ගණනය කර Column වලට ගැලපීම
+          classSts.forEach(s => {
+              let subHistory = studentHistories[s.admNo];
+              let predictedMarks = {}; 
+              let totalP = 0; 
+              let countP = 0;
+              let displayCells = {};
+
+              Object.keys(subHistory).forEach(subK => { 
+                  let arr = subHistory[subK]; 
+                  let avg = arr.reduce((a,b)=>a+b,0)/arr.length; 
+                  let pMark = Math.round(avg);
+                  
+                  predictedMarks[subK] = pMark; 
+                  totalP += pMark; 
+                  countP++; 
+                  
+                  let mapping = subKeyToColMap[subK];
+                  if(mapping) {
+                      displayCells[mapping.col] = { value: pMark, actualName: mapping.actualName };
+                  }
+              });
+
               let avgP = countP > 0 ? (totalP/countP).toFixed(2) : "0.00";
-              predictData.push({ admNo: s.admNo, name: s.name, gender: s.gender || 'Male', predicted: predictedMarks, avg: avgP });
+              predictData.push({ admNo: s.admNo, name: s.name, gender: s.gender || 'Male', predicted: predictedMarks, displayCells: displayCells, avg: avgP });
           });
 
           predictData.sort((a,b) => { let gA = a.gender === 'Female' ? 1 : 0; let gB = b.gender === 'Female' ? 1 : 0; if (gA !== gB) return gA - gB; return a.admNo.localeCompare(b.admNo, undefined, {numeric: true}); });
-          let displayCols = Array.from(allSubjectsUsed).map(k => allSubjectsData[k] ? allSubjectsData[k].name : k);
-          let rawSubKeys = Array.from(allSubjectsUsed);
+          
+          window.currentReportData = { cls: cls, students: predictData, displayCols: displayCols, type: 'Prediction' };
 
-          window.currentReportData = { cls: cls, students: predictData, rawSubKeys: rawSubKeys, displayCols: displayCols, type: 'Prediction' };
-
+          // 4. HTML එක නිර්මාණය කිරීම
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                         <div><h3 style="margin:0; color:#8b5cf6; font-size:24px; font-weight:900; display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="font-size:28px;">online_prediction</span> O/L AI Prediction</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Based on past marks trajectory</p></div>
                         <div style='display:flex; gap:12px;'>
@@ -2084,17 +2138,32 @@ async function generateClassMasterReport() {
                         </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px;">Adm No</th><th style="width:180px;">Student Name</th>`;
-          displayCols.forEach(c => html += `<th style="text-align:center;">${c}</th>`); html += `<th style="text-align:center;">Pred. Avg</th></tr></thead><tbody>`;
+          
+          displayCols.forEach(c => html += `<th style="text-align:center;">${c}</th>`); 
+          html += `<th style="text-align:center;">Pred. Avg</th></tr></thead><tbody>`;
           
           predictData.forEach(s => {
-             html += `<tr><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main); white-space:nowrap;">${s.name}</td>`;
-             rawSubKeys.forEach(k => { let val = s.predicted[k]; if(val !== undefined) { html += `<td style="text-align:center;"><span style="font-weight:800; font-size:14px;">${val}</span> <span style="color:var(--primary); font-weight:900;">(${getGr(val)})</span></td>`; } else { html += `<td style="text-align:center; font-weight:700; color:var(--text-muted);">-</td>`; } });
-             html += `<td style="text-align:center; font-weight:900; font-size:15px; color:var(--primary);">${s.avg}</td></tr>`;
+              html += `<tr><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main); white-space:nowrap;">${s.name}</td>`;
+              
+              displayCols.forEach(col => { 
+                  let cell = s.displayCells[col];
+                  if(cell && cell.value !== undefined) { 
+                      let actNameStr = cell.actualName !== col ? `<br><span style="font-size:11px; color:var(--text-muted); font-weight:600;">(${cell.actualName})</span>` : "";
+                      html += `<td style="text-align:center;"><span style="font-weight:800; font-size:14px;">${cell.value}</span> <span style="color:var(--primary); font-weight:900;">(${getGr(cell.value)})</span>${actNameStr}</td>`; 
+                  } else { 
+                      html += `<td style="text-align:center; font-weight:700; color:var(--text-muted);">-</td>`; 
+                    } 
+              });
+              
+              html += `<td style="text-align:center; font-weight:900; font-size:15px; color:var(--primary);">${s.avg}</td></tr>`;
           });
           html += `</tbody></table><p style="font-size:13px; font-weight:600; color:var(--text-muted); margin-top:15px;">* Predicted scores are estimated using historical grade averages.</p>`;
           
           htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-      } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
+      } catch (err) { 
+          htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; 
+          btn.disabled = false; btn.innerHTML = `Generate Report`;
+      }
   }
 
   async function generateALPredictionReport() {
@@ -2702,15 +2771,21 @@ async function generateClassMasterReport() {
         <table><thead><tr><th>Adm No</th><th style="width:100%;">Student Name</th>`;
         data.displayCols.forEach(c => finalHtml += `<th>${c}</th>`);
         finalHtml += `<th>Pred. Avg</th></tr></thead><tbody>`;
+        
         data.students.forEach(s => {
             finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>`;
-            data.rawSubKeys.forEach(k => {
-                let val = s.predicted[k];
-                if(val !== undefined) finalHtml += `<td style="white-space:nowrap;">${val} (${getGr(val)})</td>`;
-                else finalHtml += `<td>-</td>`;
+            data.displayCols.forEach(col => { 
+                let cell = s.displayCells[col];
+                if(cell && cell.value !== undefined) {
+                     let actNameStr = cell.actualName !== col ? `<br><span style="font-size:9px;">(${cell.actualName})</span>` : "";
+                     finalHtml += `<td style="text-align:center !important; white-space:nowrap;">${cell.value} (${getGr(cell.value)})${actNameStr}</td>`; 
+                } else {
+                     finalHtml += `<td style="text-align:center !important;">-</td>`; 
+                }
             });
-            finalHtml += `<td>${s.avg}</td></tr>`;
+            finalHtml += `<td style="text-align:center !important;">${s.avg}</td></tr>`;
         });
+        
         finalHtml += `</tbody></table></body></html>`;
         printWindow.document.write(finalHtml);
     }
@@ -3078,7 +3153,13 @@ async function generateClassMasterReport() {
         csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Predicted Avg\n`;
         data.students.forEach(s => {
             let row = [`"${s.admNo}"`, `"${s.name}"`];
-            data.rawSubKeys.forEach(k => { let val = s.predicted[k]; row.push(`"${val !== undefined ? val : '-'}"`); });
+            
+            data.displayCols.forEach(col => { 
+                let cell = s.displayCells[col];
+                let val = cell && cell.value !== undefined ? `${cell.value} (${cell.actualName})` : "-";
+                row.push(`"${val}"`); 
+            });
+            
             row.push(`"${s.avg}"`);
             csvContent += row.join(',') + "\n";
         });
