@@ -629,33 +629,47 @@
         let filteredKeys = keys.filter(k => { 
             let t = allTeachersData[k]; 
             return k.toLowerCase().includes(filterVal) || (t.name || "").toLowerCase().includes(filterVal) || (t.empNo || "").toLowerCase().includes(filterVal); 
-        }).slice(0, 50);
+        });
+
+        // "No" (Emp No) එක අනුව කුඩා අගයේ සිට විශාල අගයට පෙළගැස්වීම
+        filteredKeys.sort((a, b) => {
+            let empA = parseInt(allTeachersData[a].empNo);
+            let empB = parseInt(allTeachersData[b].empNo);
+            
+            // යම් ගුරුවරයෙකුට අංකයක් ලබා දී නැත්නම් හෝ එය අකුරක් නම්, ඔවුන්ව ලැයිස්තුවේ අගට යවයි
+            if (isNaN(empA)) empA = 999999;
+            if (isNaN(empB)) empB = 999999;
+            
+            return empA - empB;
+        });
+
+        filteredKeys = filteredKeys.slice(0, 50); 
         
         if(filteredKeys.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No teachers found</td></tr>`;
-      
-      let actionTh = document.querySelector('#secTeachers table th:last-child');
-      if(actionTh) actionTh.style.display = window.perms.editTeachers ? '' : 'none';
+       
+        let actionTh = document.querySelector('#secTeachers table th:last-child');
+        if(actionTh) actionTh.style.display = window.perms.editTeachers ? '' : 'none';
 
-      let tableData = "";
-      filteredKeys.forEach(key => { 
-          let t = allTeachersData[key]; 
-          let rBadge = t.isAdmin ? `<span class="badge badge-red" style="margin:0;">ADMIN</span>` : "";
-          let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${key}','${t.name}')" title="Reset Password"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${key}','${t.name.replace(/'/g, "\\'")}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${key}','${t.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : ''; 
-          
-          tableData += `<tr>
-                            <td style="font-weight:700;">${t.empNo || '-'}</td>
-                            <td>${key}</td>
-                            <td style="font-weight:800; color:var(--text-main);">${t.name}</td>
-                            <td>
-                                <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
-                                    <span class="badge badge-gray" style="margin:0;">${t.role}</span>
-                                    ${rBadge}
-                                </div>
-                            </td>
-                            ${btnHtml}
-                        </tr>`; 
-      });
-      tbody.innerHTML = tableData;
+        let tableData = "";
+        filteredKeys.forEach(key => { 
+            let t = allTeachersData[key]; 
+            let rBadge = t.isAdmin ? `<span class="badge badge-red" style="margin:0;">ADMIN</span>` : "";
+            let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${key}','${t.name}')" title="Reset Password"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${key}','${t.name.replace(/'/g, "\\'")}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${key}','${t.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : ''; 
+            
+            tableData += `<tr>
+                              <td style="font-weight:700;">${t.empNo || '-'}</td>
+                              <td>${key}</td>
+                              <td style="font-weight:800; color:var(--text-main);">${t.name}</td>
+                              <td>
+                                  <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
+                                      <span class="badge badge-gray" style="margin:0;">${t.role}</span>
+                                      ${rBadge}
+                                  </div>
+                              </td>
+                              ${btnHtml}
+                          </tr>`; 
+        });
+        tbody.innerHTML = tableData;
     }, 400);
 
     // --- ලබාදෙන අංක පරාසයක (Range) ගුරුවරුන්ගේ අංක පමණක් නැවත සැකසීම ---
