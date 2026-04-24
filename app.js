@@ -2461,8 +2461,9 @@ async function generateClassMasterReport() {
     let iframe = document.createElement('iframe');
     iframe.id = 'mobilePrintFrame';
     iframe.style.position = 'absolute';
-    iframe.style.width = '0px';
-    iframe.style.height = '0px';
+    iframe.style.width = '1px';   // 0px වෙනුවට 1px යොදන්න
+    iframe.style.height = '1px';  // 0px වෙනුවට 1px යොදන්න
+    iframe.style.opacity = '0';   // තිරයේ නොපෙනී යාමට මෙය යොදන්න
     iframe.style.border = 'none';
     document.body.appendChild(iframe);
     
@@ -2839,19 +2840,25 @@ async function generateClassMasterReport() {
     // --- PDF නාමය වෙනස් කිරීමේ ස්ථිරසාර ක්‍රමය (Strict Overwrite) ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-    let safeClassName = (data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    
+    let safeClassName = (data.cls || data.targetName || data.target || data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
     let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`.replace(/\s+/g, '_');
     
-    printWindow.document.close(); 
+   printWindow.document.close(); 
     
     // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
-    let frameTitleTag = printWindow.document.querySelector('title');
-    if (frameTitleTag) {
-        frameTitleTag.innerText = fileName;
-    } else {
-        let newTitle = printWindow.document.createElement('title');
-        newTitle.innerText = fileName;
-        printWindow.document.head.appendChild(newTitle);
+    try {
+        let frameTitleTag = printWindow.document.querySelector('title');
+        if (frameTitleTag) {
+            frameTitleTag.innerText = fileName;
+        } else if (printWindow.document.head) {
+            let newTitle = printWindow.document.createElement('title');
+            newTitle.innerText = fileName;
+            printWindow.document.head.appendChild(newTitle);
+        }
+    } catch (e) {
+        // මෙහිදී Error එකක් ආවොත් පද්ධතිය හිර නොවී ඊළඟ පියවරට යයි
+        console.warn("Title setting safely bypassed.");
     }
 
     // 2. ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
@@ -2971,10 +2978,22 @@ async function generateClassMasterReport() {
       let safeClassName = (data.cls || 'Report').replace(/\s+/g, '_');
       let fileName = `Class_Master_ONLY_${safeClassName}_${data.year}_${data.term}_${timeString}`;
       
-      printWindow.document.close(); 
-      let newTitle = printWindow.document.createElement('title');
-      newTitle.innerText = fileName;
-      printWindow.document.head.appendChild(newTitle);
+     printWindow.document.close(); 
+    
+    // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
+    try {
+        let frameTitleTag = printWindow.document.querySelector('title');
+        if (frameTitleTag) {
+            frameTitleTag.innerText = fileName;
+        } else if (printWindow.document.head) {
+            let newTitle = printWindow.document.createElement('title');
+            newTitle.innerText = fileName;
+            printWindow.document.head.appendChild(newTitle);
+        }
+    } catch (e) {
+        // මෙහිදී Error එකක් ආවොත් පද්ධතිය හිර නොවී ඊළඟ පියවරට යයි
+        console.warn("Title setting safely bypassed.");
+    }
 
       let originalTitle = document.title;
       document.title = fileName;
