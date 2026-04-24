@@ -657,6 +657,73 @@
       });
       tbody.innerHTML = tableData;
     }, 400);
+
+    // --- ලබාදෙන අංක පරාසයක (Range) ගුරුවරුන්ගේ අංක පමණක් නැවත සැකසීම ---
+  window.rearrangeTeacherRange = async function() {
+      // 1. ආරම්භක සහ අවසාන අංක ලබා ගැනීම
+      let startStr = prompt("Enter the STARTING Employee Number (e.g., 1):");
+      if (!startStr) return;
+      
+      let endStr = prompt("Enter the ENDING Employee Number (e.g., 10):");
+      if (!endStr) return;
+
+      let startNum = parseInt(startStr.trim());
+      let endNum = parseInt(endStr.trim());
+
+      // ලබාදුන් අගයන් නිවැරදි දැයි පරීක්ෂා කිරීම
+      if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) {
+          return alert("Invalid range provided! Please enter correct numbers.");
+      }
+
+      if(!confirm(`Are you sure you want to rearrange Emp Nos from ${startNum} to ${endNum}?\n\nOnly teachers currently in this range will be affected.`)) return;
+      
+      let btn = document.getElementById('btnRearrangeRange');
+      if(btn) { btn.disabled = true; btn.innerHTML = "Processing..."; }
+
+      try {
+          let keys = Object.keys(allTeachersData);
+          
+          // 2. අදාළ පරාසය ඇතුළත සිටින ගුරුවරුන් පමණක් වෙන් කර ගැනීම (Filter)
+          let teachersInRange = keys.filter(k => {
+              let emp = parseInt(allTeachersData[k].empNo);
+              return !isNaN(emp) && emp >= startNum && emp <= endNum;
+          });
+
+          if (teachersInRange.length === 0) {
+              alert(`No teachers found with an Emp No between ${startNum} and ${endNum}.`);
+              if(btn) { btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">format_list_numbered</span> Rearrange Range`; }
+              return;
+          }
+
+          // 3. එම ගුරුවරුන්ගේ දැනට ඇති අංක අනුව ඔවුන්ව අනුපිළිවෙලට පෙළගැස්වීම
+          teachersInRange.sort((a, b) => {
+              let empA = parseInt(allTeachersData[a].empNo);
+              let empB = parseInt(allTeachersData[b].empNo);
+              return empA - empB;
+          });
+
+          let updates = {};
+          let currentNo = startNum; // ආරම්භක අංකයෙන් පටන් ගනී
+          
+          // 4. වෙන්කර ගත් ගුරුවරුන්ට පමණක් නව අංක ලබා දීම
+          teachersInRange.forEach(k => {
+              updates[`${k}/empNo`] = currentNo.toString();
+              currentNo++;
+          });
+
+          // Database එක වෙත යාවත්කාලීන දත්ත යැවීම
+          await apiCall('teachers', 'PATCH', updates);
+          alert(`Successfully rearranged teachers in the range ${startNum} to ${endNum}!`);
+          
+          // දත්ත යාවත්කාලීන කර Table එක අලුත් කිරීම
+          await refreshGlobalCache(true);
+          
+      } catch(err) {
+          alert("Error rearranging numbers: " + err.message);
+      }
+      
+      if(btn) { btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">format_list_numbered</span> Rearrange Range`; }
+  };
   
     window.saveTeacher = async function() {
     let nic = document.getElementById('tNIC').value.trim().toUpperCase(); let name = document.getElementById('tName').value.trim(); let role = document.getElementById('tRole').value; let empNo = document.getElementById('tEmpNo').value.trim(); let isAdmin = document.getElementById('tIsAdmin').checked; let msg = document.getElementById('adminMsgT');
