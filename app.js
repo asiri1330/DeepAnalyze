@@ -17,7 +17,7 @@
     const DB_URL = "https://schoolmarksdb-default-rtdb.asia-southeast1.firebasedatabase.app"; 
     
     // crossorigin="anonymous" යන්න අනිවාර්යයෙන් ඇතුළත් කරන්න (PDF වලට පින්තූරය ලබා ගැනීමට එය අවශ්‍ය වේ)
-    const SYS_LOGO_SVG = `<img src="https://i.ibb.co/nWMHnRP/School-Logo-GCC-Transparency.png" crossorigin="anonymous" style="width:100%; height:100%; object-fit:contain;">`;
+    const SYS_LOGO_SVG = `<img src="School-Logo-GCC.png" crossorigin="anonymous" style="width:100%; height:100%; object-fit:contain;">`;
     // XSS ප්‍රහාර වැළැක්වීමේ ශ්‍රිතය
     window.sanitizeText = function(str) {
         if (!str) return ""; 
