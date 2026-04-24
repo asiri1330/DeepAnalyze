@@ -239,7 +239,11 @@
                         <div style="flex:0 0 auto; display:flex; gap:12px;"><button class="btn-action" onclick="downloadTeacherTemplate()"><span class="material-symbols-outlined icon-small">download</span> Template</button><button class="btn-primary" onclick="importTeachersCSV()"><span class="material-symbols-outlined icon-small">upload</span> Upload</button></div>
                     </div>
                     <div id="tImportMsg" style="font-size:14px; font-weight:700; margin-top:10px;"></div>
-                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; margin-bottom: 15px;">
+                      <button id="btnRearrangeRange" class="btn-action" onclick="rearrangeTeacherRange()" style="background-color: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-outlined icon-small">format_list_numbered</span> Rearrange Range (Ex: 1-10)
+                    </button>
+                    </div>
                     <input type="text" id="filterTeacher" class="input-modern" placeholder="Find Teacher..." onkeyup="filterTeachers()" style="margin-top:25px; max-width:320px;">
                     <div class="table-container"><table class="ui-data-table"><thead><tr><th>No</th><th>NIC</th><th>Name</th><th>Job Level</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="teachersTbody"></tbody></table></div>
                 </div>
