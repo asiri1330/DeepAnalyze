@@ -1372,7 +1372,11 @@ function routeReportGeneration(type) {
               html += `<tr><td style="text-align:center; font-weight:900; font-size:16px; color:#f59e0b;">${medal}${s.rank}</td><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td style="text-align:center; font-weight:800;">${s.total}</td><td style="text-align:center; font-weight:800; color:var(--primary);">${isALevelReport ? s.overallZ : s.average}</td></tr>`;
           });
           html += `</tbody></table>`;
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+         requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch(err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1457,7 +1461,11 @@ function routeReportGeneration(type) {
               html += `<tr><td style="text-align:center; font-weight:900; font-size:16px; color:#8b5cf6;">${medal}${s.sectionRank}</td><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td><span class="badge badge-gray">${s.className}</span></td><td style="text-align:center; font-weight:800;">${s.total}</td><td style="text-align:center; font-weight:800; color:var(--primary);">${isALevelReport ? s.overallZ : s.average}</td></tr>`;
           });
           html += `</tbody></table>`;
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch(err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1801,7 +1809,11 @@ async function generateClassMasterReport() {
                html += `</tbody></table></div></div>`;
           }
 
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1868,7 +1880,11 @@ async function generateClassMasterReport() {
           });
           
           html += `</tbody></table>`;
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1904,7 +1920,11 @@ async function generateClassMasterReport() {
               displayCols.forEach(col => { let cellData = s.displayMarks[col]; let val = cellData && cellData.value !== undefined ? cellData.value : "-"; let finalSubjName = (cellData && cellData.actualSubj && cellData.actualSubj !== col) ? `${col} <span style="font-size:11px; color:#64748b;">(${cellData.actualSubjCode || cellData.actualSubj})</span>` : col; html += `<tr><td style="border:1px solid #cbd5e1; padding:10px; font-weight:600;">${finalSubjName}</td><td style="border:1px solid #cbd5e1; padding:10px; text-align:center; font-weight:800; font-size:14px;">${val}</td><td style="border:1px solid #cbd5e1; padding:10px; text-align:center; font-weight:900; font-size:14px; color:var(--primary);">${getGr(val)}</td></tr>`; });
               html += `</tbody></table><div style="display:flex; justify-content:space-around; margin-top:20px; padding:15px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; font-size:15px; font-weight:900;"><span>Total: <span style="color:var(--primary);">${s.total}</span></span><span>${isALevelReport ? 'Z-Score: <span style="color:var(--primary);">'+s.overallZ+'</span>' : 'Avg: <span style="color:var(--primary);">'+s.average+'</span>'}</span><span style="color:var(--success);">Rank: ${s.rank}</span></div><p style="text-align:center; font-size:12px; font-weight:600; color:var(--text-muted); margin-top:20px;">(Sample card shown. Click "Print Cards" to view all.)</p></div>`;
           }
-          html += `</div>`; htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          html += `</div>`; requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -2052,7 +2072,11 @@ async function generateClassMasterReport() {
              html += `</div></div>`;
           });
           
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -2134,7 +2158,11 @@ async function generateClassMasterReport() {
           });
           
           html += `</tbody></table>`;
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
 
           // Render Chart
           const ctx = document.getElementById('remedialChart');
@@ -2309,7 +2337,11 @@ async function generateClassMasterReport() {
           });
           html += `</tbody></table><p style="font-size:13px; font-weight:600; color:var(--text-muted); margin-top:15px;">* Predicted scores are estimated using historical grade averages.</p>`;
           
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+         requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { 
           htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; 
           btn.disabled = false; btn.innerHTML = `Generate Report`;
@@ -2450,7 +2482,11 @@ async function generateClassMasterReport() {
           });
           html += `</div>`;
           
-          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+          requestAnimationFrame(() => {
+    htmlContainer.innerHTML = html; 
+    btn.disabled = false; 
+    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
+});
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:bold;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
