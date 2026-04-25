@@ -3397,35 +3397,31 @@ async function generateClassMasterReport() {
           errorDiv.style.display = "none";
       }, 6000);
   };
-  // --- Real-time Mark Validation Function ---
-  window.validateMarkInput = function(input) {
-      let val = input.value.toUpperCase();
-      
-      // 1. වලංගු නොවන අකුරු සහ සංකේත මැකීම (Absent කේත සඳහා හැර)
-      if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
-          // ඉලක්කම් (0-9) හැර වෙනත් කුමන හෝ අකුරක් හෝ සංකේතයක් ඇත්නම් එය ස්වයංක්‍රීයව මකා දමයි
-          let cleanVal = val.replace(/[^0-9]/g, '');
-          input.value = cleanVal;
-      } else {
-          input.value = val;
-      }
+  // යාවත්කාලීන කළ validateMarkInput ශ්‍රිතය (කීබෝඩ් එක හිරවීම වළක්වයි)
+window.validateMarkInput = function(input) {
+    // Timeout එකක් යෙදීමෙන් ටයිප් කර අවසන් වනතුරු ගණනය කිරීම් ප්‍රමාද කරයි
+    clearTimeout(input.validationTimeout);
+    
+    input.validationTimeout = setTimeout(() => {
+        let val = input.value.toUpperCase();
+        
+        if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
+            let cleanVal = val.replace(/[^0-9]/g, '');
+            if(input.value !== cleanVal) input.value = cleanVal;
+        }
 
-      // 2. ඇතුළත් කළ අගය 0 ත් 100 ත් අතර දැයි පරීක්ෂා කිරීම
-      if (input.value !== "") {
-          let numMark = Number(input.value);
-          if (!isNaN(numMark)) {
-              if (numMark > 100) {
-                  input.value = 100; // 100ට වඩා වැඩි නම් ස්වයංක්‍රීයව 100 බවට පත් කරයි
-              } else if (numMark < 0) {
-                  input.value = 0;   // ඍණ අගයක් නම් 0 බවට පත් කරයි
-              }
-          }
-      }
-      
-      // 3. දත්ත නිවැරදි කරගත් පසු Error Highlight වී ඇත්නම් එය සාමාන්‍ය තත්ත්වයට පත් කිරීම
-      input.style.borderColor = "var(--primary)";
-      input.style.backgroundColor = "#eff6ff";
-  };
+        if (input.value !== "") {
+            let numMark = Number(input.value);
+            if (!isNaN(numMark)) {
+                if (numMark > 100) input.value = 100;
+                else if (numMark < 0) input.value = 0;
+            }
+        }
+        
+        input.style.borderColor = "var(--primary)";
+        input.style.backgroundColor = "#eff6ff";
+    }, 150); // මිලි තත්පර 150ක් ප්‍රමාද කරයි
+};
 
   window.fetchStudentReport = async function() {
       try {
