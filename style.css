@@ -184,7 +184,21 @@
       
       /* 9. Mark Entry Specific (ලකුණු ඇතුළත් කරන කොටුව) */
       .mark-input { width: 65px !important; padding: 6px; font-size: 14px; }
+    /* ජංගම දුරකථන සඳහා Scroll කිරීම සුමට කිරීම සහ GPU මඟින් පාලනය කිරීම */
+    .table-container, 
+    #reportHtmlContainer, 
+    .ui-data-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; 
+    scroll-behavior: smooth;
+    will-change: transform; 
     }
+
+    /* අවශ්‍ය නම් මුළු පිටුවම Smooth Scroll වීමට මෙයද එක් කළ හැක */
+    html {
+    scroll-behavior: smooth;
+    }
+}
 
     /* ==========================================
        ROLE-BASED VIEWS (Designation අනුව පෙනුම වෙනස් කිරීම)
