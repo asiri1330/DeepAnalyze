@@ -1004,11 +1004,11 @@
       html += `</tbody></table></div>`;
       if (window.perms.editMarks) {
           // Edit සහ Bulk Delete පහසුකම සඳහා බොත්තම්
-          html += `<div style="display:flex; gap:15px; margin-top:25px;">
-                      <button class="btn-success" onclick="saveMarks()" id="saveBtn" style="flex:2; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);"><span class="material-symbols-outlined icon-small">save</span> Save Marks</button>
-                      <button class="btn-danger" onclick="deleteAllMarksForSubject()" id="deleteMarksBtn" style="flex:1; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);"><span class="material-symbols-outlined icon-small">delete_sweep</span> Delete All</button>
-                   </div>
-                   <div id="saveMsg" style="text-align:center; margin-top:15px; font-weight:800; font-size:15px;"></div>`;
+         html += `<div style="display:flex; gap:12px; margin-top:25px; flex-wrap: wrap;">
+            <button class="btn-success" onclick="saveMarks()" id="saveBtn" style="flex: 1 1 200px; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);"><span class="material-symbols-outlined icon-small">save</span> Save Marks</button>
+            <button class="btn-danger" onclick="deleteAllMarksForSubject()" id="deleteMarksBtn" style="flex: 1 1 200px; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);"><span class="material-symbols-outlined icon-small">delete_sweep</span> Delete All</button>
+         </div>
+         <div id="saveMsg" style="text-align:center; margin-top:15px; font-weight:800; font-size:15px;"></div>`;
       }
       cont.innerHTML = html;
       setTimeout(() => { let firstInput = document.querySelector('.mark-input'); if(firstInput && window.perms.editMarks) firstInput.focus(); }, 100);
@@ -1359,11 +1359,11 @@ function routeReportGeneration(type) {
           window.currentReportData = { year: yr, term: trm, targetName: cls, ctName: ctName, students: topStudents, type: 'TopClass', isALevel: isALevelReport };
 
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
-                          <div><h3 style="margin:0; color:#f59e0b; font-size:24px; font-weight:900;"><span class="material-symbols-outlined" style="vertical-align:middle;">workspace_premium</span> Top Students (Class)</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Term: ${yr} ${trm}</p></div>
-                          <div style='display:flex; gap:12px;'>
-                              <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                              <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
-                          </div>
+                        <div><h3 style="margin:0; color:#f59e0b; font-size:24px; font-weight:900;"><span class="material-symbols-outlined" style="vertical-align:middle;">workspace_premium</span> Top Students (Class)</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Term: ${yr} ${trm}</p></div>
+                        <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
+                            <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                            <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                        </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px; text-align:center;">Rank</th><th style="width:100px;">Adm No</th><th>Student Name</th><th style="text-align:center;">Total</th><th style="text-align:center;">${isALevelReport ? 'Z-Score' : 'Average'}</th></tr></thead><tbody>`;
 
@@ -1753,16 +1753,9 @@ async function generateClassMasterReport() {
           // --- වෙනස් කරන ලද බොත්තම් අඩංගු HTML කොටස ---
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                         <div><h3 style="margin:0; color:var(--primary); font-size:24px; font-weight:900;">Class Master Sheet</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Teacher: <span style="color:var(--text-main);">${ctName}</span> | Term: ${yr} ${trm}</p></div>
-                        <div style='display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;'>
-                            <button class='btn-danger btn-small' style='background-color:#991b1b; border:none; padding:8px 15px;' onclick='downloadOnlyClassMasterPDF()'>
-                                <span class="material-symbols-outlined icon-small">view_list</span> Download Master ONLY
-                            </button>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'>
-                                <span class="material-symbols-outlined icon-small">picture_as_pdf</span> Full PDF
-                            </button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()'>
-                                <span class="material-symbols-outlined icon-small">table_view</span> CSV
-                            </button>
+                        <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
+                            <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                            <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
                         </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px;">Adm No</th><th style="width:200px; white-space:nowrap;">Student Name</th>`;
@@ -1987,9 +1980,9 @@ async function generateClassMasterReport() {
       
       let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                     <div><h3 style="margin:0; color:var(--info); font-size:24px; font-weight:900;">Subject Marks</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Subject: <span style="color:var(--text-main);">${actualSubjName}</span> | Class: ${cls} | Year: ${yr} ${trm}</p></div>
-                    <div style='display:flex; gap:12px;'>
-                        <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                        <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                    <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
+                        <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                        <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
                     </div>
                   </div>`;
                   
