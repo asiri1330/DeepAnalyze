@@ -1,5 +1,4 @@
-
-    // 2. Add your Firebase Settings here
+// 2. Add your Firebase Settings here
    const firebaseConfig = {
     apiKey: "AIzaSyC52EigxMOjXqkWFWenCnna28klZvmXQsY",
     authDomain: "schoolmarksdb.firebaseapp.com",
@@ -112,14 +111,14 @@
         return data;
     }
 
-    // --- Debouncing ශ්‍රිතය (මෙය fetchWithCache එකට පහළින් එක් කරන්න) ---
+    // --- Debouncing ශ්‍රිතය ---
     function debounce(func, wait) {
         let timeout;
         return function(...args) {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), wait);
         };
-    }                                                                       
+    }                                                                  
 
     // Fixed Hash Function to work on both Local file:// and HTTPS
     async function hashData(string) {
@@ -186,7 +185,6 @@
     } catch(err) { console.error("Cache Error:", err); }
   }
 
-  // --- NEW: Role Based Access Control Application ---
   // --- NEW: Role Based Access Control Application ---
   window.applyRBAC = function() {
       if(!currentUser) return;
@@ -672,7 +670,7 @@
         tbody.innerHTML = tableData;
     }, 400);
 
-    // --- ලබාදෙන අංක පරාසයක (Range) ගුරුවරුන්ගේ අංක පමණක් නැවත සැකසීම ---
+  // --- ලබාදෙන අංක පරාසයක (Range) ගුරුවරුන්ගේ අංක පමණක් නැවත සැකසීම ---
   window.rearrangeTeacherRange = async function() {
       // 1. ආරම්භක සහ අවසාන අංක ලබා ගැනීම
       let startStr = prompt("Enter the STARTING Employee Number (e.g., 1):");
@@ -772,7 +770,7 @@
   window.downloadTeacherTemplate = function() { let csv = "EmpNo,NIC,Name,Role,IsAdmin(Yes/No)\nT001,850000000V,Kamal Perera,Teacher,No"; let a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = `Teacher_File_Format.csv`; a.click(); }
   window.importTeachersCSV = function() {
     let file = document.getElementById('tCsvFile').files[0]; let msg = document.getElementById('tImportMsg'); if(!file) return msg.innerText = "Please pick a file first."; msg.style.color = "var(--primary)"; msg.innerText = "Reading file...";
-    let reader = new FileReader(); reader.onload = async function(e) { try { let rows = parseCSV(e.target.result); if(rows.length < 2) return msg.innerText = "File has no data."; let updates = {}; let count = 0; for(let i=1; i<rows.length; i++) { let r = rows[i]; if(r.length >= 5) { let empNo = r[0], nic = r[1] ? r[1].trim().toUpperCase() : "", name = r[2], role = r[3], isAdminStr = r[4].toLowerCase(); if(nic && name) { updates[nic] = { empNo: empNo, name: name, role: role, isAdmin: (isAdminStr === 'yes' || isAdminStr === 'true'), isFirstLogin: true, password: null }; count++; } } }
+    let reader = new FileReader(); reader.onload = async function(e) { try { let rows = parseCSV(e.target.result); if(rows.length < 2) return msg.innerText = "File has no data."; let updates = {}; let count = 0; for(let i=1, len=rows.length; i<len; i++) { let r = rows[i]; if(r.length >= 5) { let empNo = r[0], nic = r[1] ? r[1].trim().toUpperCase() : "", name = r[2], role = r[3], isAdminStr = r[4].toLowerCase(); if(nic && name) { updates[nic] = { empNo: empNo, name: name, role: role, isAdmin: (isAdminStr === 'yes' || isAdminStr === 'true'), isFirstLogin: true, password: null }; count++; } } }
         if(count > 0) { msg.innerText = `Saving ${count} teachers...`; await apiCall('teachers', 'PATCH', updates); msg.style.color = "var(--success)"; msg.innerText = `Saved ${count} teachers!`; document.getElementById('tCsvFile').value = ""; setTimeout(()=>msg.innerText="", 4000); refreshGlobalCache(true); } else { msg.innerText = "No correct data to save."; } } catch(err) { msg.style.color = "var(--danger)"; msg.innerText = "File error: " + err.message; }
     }; reader.readAsText(file);
   }
@@ -912,7 +910,7 @@
   window.importStudentsCSV = function() {
     let file = document.getElementById('sCsvFile').files[0]; let msg = document.getElementById('sImportMsg'); if(!file) return msg.innerText = "Please pick a file first."; msg.style.color = "var(--primary)"; msg.innerText = "Reading file...";
     let reader = new FileReader(); reader.onload = async function(e) { try { let rows = parseCSV(e.target.result); if(rows.length < 2) return msg.innerText = "File has no data."; let updates = {}; let count = 0; 
-    for(let i=1; i<rows.length; i++) { 
+    for(let i=1, len=rows.length; i<len; i++) { 
         let r = rows[i]; 
         if(r.length >= 3) { 
             let admNo = r[0], name = r[1], cls = r[2];
@@ -1044,7 +1042,7 @@
         msg = document.getElementById('saveMsg'), 
         btn = document.getElementById('saveBtn');
 
-    for(let i=0; i<inputs.length; i++) { 
+    for(let i=0, len=inputs.length; i<len; i++) { 
         let val = inputs[i].value.trim().toUpperCase(), admNo = inputs[i].id.split('_')[1]; 
         
        if (val === "" || val === "ABS" || val === "ABSENT") {
@@ -1128,7 +1126,7 @@
       let inputs = document.getElementsByClassName('mark-input');
       let updates = {};
       
-      for(let i=0; i<inputs.length; i++) { 
+      for(let i=0, len=inputs.length; i<len; i++) { 
           let admNo = inputs[i].id.split('_')[1];
           if(isBucket) {
               bucketSubjectsKeys.forEach(k => { updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; });
@@ -1186,11 +1184,6 @@
         box.innerHTML = html; box.style.display = 'block'; 
     }, 300);
     window.selectProgressStudent = function(admNo, name) { document.getElementById('progAdmNo').value = admNo; document.getElementById('progSuggestions').style.display = 'none'; loadStudentProgress(); }
-    document.addEventListener("click", function (e) { 
-      if (e.target.id !== "progAdmNo" && e.target.id !== "compareSearchInput" && e.target.id !== "studentMarksSearch") { 
-          document.querySelectorAll(".autocomplete-items").forEach(el=>el.style.display="none"); 
-      } 
-    });
 
   window.loadStudentProgress = async function() {
     let admNo = document.getElementById('progAdmNo').value.trim(); if(!admNo) return alert("Please type an Admission Number."); document.getElementById('progressProfile').style.display = 'block'; document.getElementById('progStName').innerHTML = "Getting data...";
@@ -1822,7 +1815,7 @@ async function generateClassMasterReport() {
       try {
         let queryParams = `?orderBy="class"&equalTo="${cls}"`;
         let classStudentsData = await apiCall('students', 'GET', null, queryParams);
-      
+        
         let classSts = [];
         if (classStudentsData) {
             classSts = Object.keys(classStudentsData).map(k => {
@@ -1886,7 +1879,7 @@ async function generateClassMasterReport() {
             let text = row.textContent.toLowerCase();
             row.style.display = text.includes(filter) ? '' : 'none';
         });
-    }, 300)
+    }, 300);
 
   async function generateIndividualCards() {
       let yr = document.getElementById('repYear').value, trm = document.getElementById('repTerm').value, cls = document.getElementById('repClass').value;
@@ -2288,11 +2281,11 @@ async function generateClassMasterReport() {
 
           // 4. HTML එක නිර්මාණය කිරීම
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
-                        <div><h3 style="margin:0; color:#8b5cf6; font-size:24px; font-weight:900; display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="font-size:28px;">online_prediction</span> O/L AI Prediction</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Based on past marks trajectory</p></div>
-                        <div style='display:flex; gap:12px;'>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
-                        </div>
+                          <div><h3 style="margin:0; color:#8b5cf6; font-size:24px; font-weight:900; display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="font-size:28px;">online_prediction</span> O/L AI Prediction</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Based on past marks trajectory</p></div>
+                          <div style='display:flex; gap:12px;'>
+                              <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                              <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                          </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px;">Adm No</th><th style="width:180px;">Student Name</th>`;
           
@@ -2409,11 +2402,11 @@ async function generateClassMasterReport() {
           window.currentReportData = { cls: cls, students: predictData, type: 'ALPrediction' };
 
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
-                        <div><h3 style="margin:0; color:#ec4899; font-size:24px; font-weight:900; display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="font-size:28px;">psychology</span> A/L AI Prediction</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700; font-size:14px;">Class: <span style="color:#0f172a;">${cls}</span> | Student Progress Details</p></div>
-                        <div style='display:flex; gap:12px;'>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
-                        </div>
+                          <div><h3 style="margin:0; color:#ec4899; font-size:24px; font-weight:900; display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="font-size:28px;">psychology</span> A/L AI Prediction</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700; font-size:14px;">Class: <span style="color:#0f172a;">${cls}</span> | Student Progress Details</p></div>
+                          <div style='display:flex; gap:12px;'>
+                              <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                              <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                          </div>
                       </div>`;
           
           html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 25px;">`;
@@ -3046,416 +3039,215 @@ async function generateClassMasterReport() {
         printWindow.document.write(finalHtml);
     }
     else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
+        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
+        let subTitle = data.type === 'RemedialClass' ? `Class: ${data.target} | Class Teacher: ${repTeacher}` : `Grade: ${data.target}`;
 
-        let finalHtml = `<html><head><style>${commonStyles} 
-        .w-grade { color: #dc2626 !important; font-weight:900;} 
-        .s-grade { color: #d97706 !important; font-weight:bold;}
-        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
-        </style></head><body>
-        <div class="header">
-            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
-            <div style="text-align:left;">
-                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
-                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
-            </div>
-        </div>`;
+        let finalHtml = `<html><head><style>${commonStyles} 
+        .w-grade { color: #dc2626 !important; font-weight:900;} 
+        .s-grade { color: #d97706 !important; font-weight:bold;}
+        .stat-table th, .stat-table td { font-size: 11px; padding: 4px; border: 1px solid #000 !important;}
+        </style></head><body>
+        <div class="header">
+            <div style="width: 75px; height: 75px;">${SYS_LOGO_SVG}</div>
+            <div style="text-align:left;">
+                <h1>${schoolName}</h1><h2>${title}</h2><h3>${subTitle} | Term: ${data.year} ${data.term}</h3>
+                <p style="font-size:10px; margin:2px 0; font-weight:bold;">Focus: Students scoring below 50 marks ('W' & 'S' Grades)</p>
+            </div>
+        </div>`;
 
-        finalHtml += `<div style="margin-bottom:20px; width:60%;">
-            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
-            <table class="stat-table">
-            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (< 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
-        
-        Object.keys(data.subjectStats).forEach(sub => {
-            let stat = data.subjectStats[sub];
-            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
-        });
-        finalHtml += `</tbody></table></div>`;
+        finalHtml += `<div style="margin-bottom:20px; width:60%;">
+            <h4 style="margin:0 0 5px 0; font-size:12px;">Core Subjects Summary</h4>
+            <table class="stat-table">
+            <thead><tr><th style="background:transparent;">Subject</th><th style="background:transparent; text-align:center !important;">'W' (< 35)</th><th style="background:transparent; text-align:center !important;">'S' (35-49)</th></tr></thead><tbody>`;
+        
+        Object.keys(data.subjectStats).forEach(sub => {
+            let stat = data.subjectStats[sub];
+            if(stat.W > 0 || stat.S > 0) finalHtml += `<tr><td>${sub}</td><td style="text-align:center !important; font-weight:bold;">${stat.W}</td><td style="text-align:center !important;">${stat.S}</td></tr>`;
+        });
+        finalHtml += `</tbody></table></div>`;
 
-        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
+        finalHtml += `<table><thead><tr><th style="width:8%;">Adm No</th><th style="width:25%;">Student Name</th>${data.type === 'RemedialGrade' ? '<th>Class</th>' : ''}<th style="text-align:center !important; width:5%;">W</th><th style="text-align:center !important; width:5%;">S</th><th style="width:57%;">Subjects to Improve</th></tr></thead><tbody>`;
 
-        data.students.forEach(s => {
-            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
-            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
-        });
-        
-        // --- වෙනස් කළ කොටස: Signatures සඳහා Flexbox Space-between භාවිත කිරීම ---
-        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
-        finalHtml += `</tbody></table>
+        data.students.forEach(s => {
+            let subDetails = s.details.map(d => `<span class="${d.grade === 'W' ? 'w-grade' : 's-grade'}">${d.subject} (${d.mark})</span>`).join(', ');
+            finalHtml += `<tr><td>${sanitizeText(s.admNo)}</td><td>${sanitizeText(s.name)}</td>${data.type === 'RemedialGrade' ? `<td>${s.className}</td>` : ''}<td style="text-align:center !important;">${s.wCount}</td><td style="text-align:center !important;">${s.sCount}</td><td style="font-size:10px; font-weight:normal;">${subDetails}</td></tr>`;
+        });
+        
+        // --- වෙනස් කළ කොටස: Signatures සඳහා Flexbox Space-between භාවිත කිරීම ---
+        let leftSigText = data.type === 'RemedialClass' ? "Class Teacher" : "Sectional Head";
+        finalHtml += `</tbody></table>
             <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                 <div class="sig-box" style="text-align: left;"><div class="sig-line"></div>${leftSigText}</div>
                 <div class="sig-box" style="text-align: right;"><div class="sig-line"></div>Principal / Vice Principal</div>
             </div>
         </body></html>`;
-        // -------------------------------------------------------------------------
+        // -------------------------------------------------------------------------
         
-        printWindow.document.write(finalHtml);
-    }
+        printWindow.document.write(finalHtml);
+    }
     // --- PDF නාමය වෙනස් කිරීමේ ස්ථිරසාර ක්‍රමය (Strict Overwrite) ---
     let d = new Date();
     let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
     
     let safeClassName = (data.cls || data.targetName || data.target || data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
-    let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}`.replace(/\s+/g, '_');
-    
-   printWindow.document.close(); 
-    
-    // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
-    try {
-        let frameTitleTag = printWindow.document.querySelector('title');
-        if (frameTitleTag) {
-            frameTitleTag.innerText = fileName;
-        } else if (printWindow.document.head) {
-            let newTitle = printWindow.document.createElement('title');
-            newTitle.innerText = fileName;
-            printWindow.document.head.appendChild(newTitle);
-        }
-    } catch (e) {
-        // මෙහිදී Error එකක් ආවොත් පද්ධතිය හිර නොවී ඊළඟ පියවරට යයි
-        console.warn("Title setting safely bypassed.");
-    }
+    let fileName = `${data.type || 'Marks'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_I seem to be encountering an error. Can I try something else for you?${timeString}`; 
+    
+    printWindow.document.title = fileName;
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
+}
 
-    // 2. ප්‍රධාන වෙබ් පිටුවේ නම තාවකාලිකව වෙනස් කිරීම
-    let originalTitle = document.title;
-    document.title = fileName;
-    
-    // බ්‍රවුසරයට නම වෙනස් කරගැනීමට මදක් වැඩිපුර කාලයක් (තත්පර 1ක්) ලබා දී Print කිරීම
-    setTimeout(() => { 
-        printWindow.focus();
-        printWindow.print(); 
-        
-        // Print තිරය පැමිණි පසු නැවත පරණ නම යථා තත්ත්වයට පත් කිරීම
-        setTimeout(() => { document.title = originalTitle; }, 2000);
-    }, 1000);
+// --- Download Only Class Master PDF (Without Analytics/Stats) ---
+window.downloadOnlyClassMasterPDF = function() {
+    const data = window.currentReportData;
+    if (!data || data.type !== 'Class') return alert("Please generate the Class Master Report first.");
+    
+    let oldIframe = document.getElementById('mobilePrintFrame');
+    if (oldIframe) { oldIframe.remove(); } 
+
+    let iframe = document.createElement('iframe');
+    iframe.id = 'mobilePrintFrame';
+    iframe.style.position = 'absolute';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.opacity = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+    
+    const printWindow = iframe.contentWindow;
+    let repClass = data.cls || "";
+    let repTeacher = data.ctName || "..........................";
+    const isLandscape = data.displayCols.length > 8; 
+    const orientation = isLandscape ? 'landscape' : 'portrait';
+    
+    let finalHtml = `<html><head><style>
+    @page { size: A4 ${orientation}; margin: 10mm; } 
+    * { color: #000 !important; font-family: 'Inter', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+    body { margin: 0; text-transform: capitalize;} 
+    .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; } 
+    .header-container h1 { margin: 0; font-size: 18px; font-weight:900; text-transform: uppercase;} 
+    .header-container h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: bold;} 
+    .info-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; font-size: 11px;} 
+    .official-table { width: 100%; border-collapse: collapse; table-layout: auto; } 
+    .official-table th, .official-table td { border: 1px solid #000 !important; padding: 5px; text-align: left !important; font-size: 10px; font-weight:bold; } 
+    .official-table th { vertical-align: bottom; border-bottom: 1.5px solid #000 !important; text-transform:uppercase; white-space: nowrap; } 
+    .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: 4px; font-size:10px; white-space:nowrap; text-align: left !important;} 
+    </style></head><body>`;
+    
+    finalHtml += `<div class="header-container"><div style="width: 70px; height: 70px;">${SYS_LOGO_SVG}</div><div style="text-align:left;"><h1>R/Gankanda Central College</h1><h2>Class Master Sheet (Marks Only) - ${data.year} ${data.term}</h2></div></div><div class="info-row"><span>Class: ${sanitizeText(repClass)}</span><span>Class Teacher: ${repTeacher}</span></div><table class="official-table"><thead><tr><th style="width:1%;">Adm No</th><th style="width:99%;">Student Name</th>`;
+    data.displayCols.forEach(c => finalHtml += `<th><span class="vertical-text">${c}</span></th>`);
+    finalHtml += `<th><span class="vertical-text">Total</span></th><th><span class="vertical-text">${data.isALevel ? 'Z-Score' : 'Average'}</span></th><th><span class="vertical-text">Rank</span></th></tr></thead><tbody>`;
+    
+    data.students.forEach(s => {
+        finalHtml += `<tr><td>${s.admNo}</td><td style="white-space:normal;">${s.name}</td>`;
+        data.displayCols.forEach(col => { 
+            let cellData = s.displayMarks[col]; 
+            let val = cellData && cellData.value !== undefined ? cellData.value : "-"; 
+            if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) { val += ` (${cellData.actualSubjCode || cellData.actualSubj})`; } 
+            finalHtml += `<td>${val}</td>`; 
+        });
+        finalHtml += `<td>${s.total}</td><td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.rank}</td></tr>`;
+    });
+    
+    finalHtml += `</tbody></table></body></html>`;
+    printWindow.document.write(finalHtml);
+    
+    let d = new Date();
+    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
+    let safeClassName = (repClass || 'Report').replace(/\s+/g, '_');
+    printWindow.document.title = `MasterOnly_${safeClassName}_${data.year}_${data.term}_${timeString}`;
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
+}
+
 // ==========================================
-  // NEW: Download ONLY the Class Master Sheet PDF (Without Summary Tables)
-  // ==========================================
-  window.downloadOnlyClassMasterPDF = function() {
-      const data = window.currentReportData; 
-      if (!data || data.type !== 'Class') return alert("Please generate the Class Master Report first.");
-      
-      const schoolName = "R/Gankanda Central College"; 
-      
-      let oldIframe = document.getElementById('mobilePrintFrame');
-      if (oldIframe) { oldIframe.remove(); } 
-
-      let iframe = document.createElement('iframe');
-      iframe.id = 'mobilePrintFrame';
-      iframe.style.position = 'absolute';
-      iframe.style.width = '0px';
-      iframe.style.height = '0px';
-      iframe.style.border = 'none';
-      document.body.appendChild(iframe);
-      
-      const printWindow = iframe.contentWindow;
-      
-      let repClass = data.cls || "";
-      let repTeacher = data.ctName || "..........................";
-      
-      const isLandscape = data.displayCols.length > 8; 
-      const orientation = isLandscape ? 'landscape' : 'portrait'; 
-      const studentsPerPage = isLandscape ? 30 : 40; 
-      
-      let reportStyles = `<style>
-      @page { size: A4 ${orientation}; margin: 10mm; } 
-      * { color: #000 !important; font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
-      body { background: transparent; margin: 0; text-transform: capitalize;} 
-      .page-break { page-break-after: always; } 
-      .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; } 
-      .header-container h1 { margin: 0; font-size: 18px; font-weight:900; text-transform: uppercase;} 
-      .header-container h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: bold;} 
-      .info-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; font-size: 11px;} 
-      .official-table { width: 100%; border-collapse: collapse; table-layout: auto; } 
-      .official-table th, .official-table td { border: 1px solid #000 !important; padding: 5px; text-align: left !important; font-size: 10px; font-weight:bold; vertical-align: middle; } 
-      .official-table th { background-color: transparent !important; vertical-align: bottom; font-weight:bold !important; border-bottom: 1.5px solid #000 !important; text-transform:uppercase; white-space: nowrap; } 
-      .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: 4px; font-size:10px; white-space:nowrap; text-align: left !important;} 
-      .signature-section { display: flex; justify-content: space-between; margin-top: 30px; page-break-inside: avoid;} 
-      .sig-box { text-align: center; width: 30%; font-weight: bold; font-size: 11px;} 
-      .sig-line { border-top: 1px dashed #000; margin-bottom: 5px; width: 80%; margin-left: auto; margin-right: auto; } 
-      </style>`;
-      
-      let logoSvg = typeof SYS_LOGO_SVG !== 'undefined' ? SYS_LOGO_SVG : '';
-      let finalHtml = `<html><head>${reportStyles}</head><body>`;
-      
-      for (let i = 0; i < data.students.length; i += studentsPerPage) {
-          const studentChunk = data.students.slice(i, i + studentsPerPage); 
-          const isLastPage = (i + studentsPerPage) >= data.students.length;
-          
-          finalHtml += `<div class="${!isLastPage ? 'page-break' : ''}">
-              <div class="header-container">
-                  <div style="width: 70px; height: 70px;">${logoSvg}</div>
-                  <div style="text-align:left;">
-                      <h1>${schoolName}</h1>
-                      <h2>Class Master Report (Only) - ${data.year} ${data.term}</h2>
-                  </div>
-              </div>
-              <div class="info-row">
-                  <span style="text-align:left;">Class: ${repClass}</span>
-                  <span style="text-align:right;">Class Teacher: ${repTeacher}</span>
-              </div>
-              <table class="official-table">
-                  <thead>
-                      <tr><th style="width:1%;">Adm No</th><th style="width:99%;">Student Name</th>`;
-          
-          data.displayCols.forEach(c => finalHtml += `<th><span class="vertical-text">${c}</span></th>`);
-          finalHtml += `<th><span class="vertical-text">Total</span></th>`;
-          if(data.isALevel) finalHtml += `<th><span class="vertical-text">Z-Score</span></th>`; else finalHtml += `<th><span class="vertical-text">Average</span></th>`;
-          finalHtml += `<th><span class="vertical-text">Rank</span></th></tr></thead><tbody>`;
-          
-          studentChunk.forEach(s => {
-              finalHtml += `<tr><td>${s.admNo}</td><td style="white-space:normal;">${s.name}</td>`;
-              data.displayCols.forEach(col => { 
-                  let cellData = s.displayMarks[col]; 
-                  let val = cellData && cellData.value !== undefined ? cellData.value : "-"; 
-                  if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) { 
-                      val += ` (${cellData.actualSubjCode || cellData.actualSubj})`; 
-                  } 
-                  finalHtml += `<td>${val}</td>`; 
-              });
-              finalHtml += `<td>${s.total}</td><td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.rank}</td></tr>`;
-          });
-          
-          finalHtml += `</tbody></table>`;
-          
-          if(isLastPage) {
-              // වෙනත් කිසිදු Summary Table එකක් අඩංගු නොවේ. අත්සන් කිරීමේ තීරුව පමණක් එක් වේ.
-              finalHtml += `<div class="signature-section"><div class="sig-box"><div class="sig-line"></div>Class Teacher / Sectional Head</div><div class="sig-box"><div class="sig-line"></div>Principal / Vice Principal</div></div>`;
-          }
-          finalHtml += `</div>`;
-      }
-      finalHtml += `</body></html>`; 
-      
-      printWindow.document.write(finalHtml);
-      
-      let d = new Date();
-      let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-      let safeClassName = (data.cls || 'Report').replace(/\s+/g, '_');
-      let fileName = `Class_Master_ONLY_${safeClassName}_${data.year}_${data.term}_${timeString}`;
-      
-     printWindow.document.close(); 
-    
-    // 1. Iframe එකේ HTML ඇතුළත ඇති පරණ Title එක සොයාගෙන එය අලුත් නමට වෙනස් කිරීම
-    try {
-        let frameTitleTag = printWindow.document.querySelector('title');
-        if (frameTitleTag) {
-            frameTitleTag.innerText = fileName;
-        } else if (printWindow.document.head) {
-            let newTitle = printWindow.document.createElement('title');
-            newTitle.innerText = fileName;
-            printWindow.document.head.appendChild(newTitle);
-        }
-    } catch (e) {
-        // මෙහිදී Error එකක් ආවොත් පද්ධතිය හිර නොවී ඊළඟ පියවරට යයි
-        console.warn("Title setting safely bypassed.");
-    }
-
-      let originalTitle = document.title;
-      document.title = fileName;
-      
-      setTimeout(() => { 
-          printWindow.focus();
-          printWindow.print(); 
-          setTimeout(() => { document.title = originalTitle; }, 2000);
-      }, 1000);
-  }
+// CSV EXPORT FUNCTION
+// ==========================================
+window.exportReportToCSV = function() {
+    const data = window.currentReportData;
+    if (!data) return alert("No report generated.");
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    if(data.type === 'Class') {
+        csvContent += "Adm No,Student Name,";
+        csvContent += data.displayCols.join(",") + ",Total," + (data.isALevel ? "Z-Score" : "Average") + ",Rank\n";
+        data.students.forEach(s => {
+            let row = [s.admNo, `"${s.name}"`];
+            data.displayCols.forEach(col => {
+                let cellData = s.displayMarks[col];
+                let val = cellData && cellData.value !== undefined ? cellData.value : "-";
+                row.push(`"${val}"`);
+            });
+            row.push(s.total, data.isALevel ? s.overallZ : s.average, s.rank);
+            csvContent += row.join(",") + "\n";
+        });
+    } 
+    else if(data.type === 'Subject') {
+        csvContent += "Adm No,Student Name,Marks,Grade\n";
+        data.students.forEach(s => { csvContent += `${s.admNo},"${s.name}",${s.mark},${s.grade}\n`; });
+    }
+    else if(data.type === 'TopClass' || data.type === 'TopSection') {
+        let rankCol = data.type === 'TopSection' ? 'Grade Rank' : 'Class Rank';
+        csvContent += `${rankCol},Adm No,Student Name,${data.type === 'TopSection' ? 'Class,' : ''}Total,${data.isALevel ? 'Z-Score' : 'Average'}\n`;
+        data.students.forEach(s => { 
+            let rnk = data.type === 'TopSection' ? s.sectionRank : s.rank;
+            csvContent += `${rnk},${s.admNo},"${s.name}",${data.type === 'TopSection' ? s.className+',' : ''}${s.total},${data.isALevel ? s.overallZ : s.average}\n`; 
+        });
+    }
+    else if(data.type === 'PassesSummaryClass' || data.type === 'PassesSummarySection') {
+        csvContent += "Pass Combination,Adm No,Student Name,Class,Average\n";
+        let sortedCombos = Object.keys(data.combos).sort((a,b) => data.combos[b].score - data.combos[a].score);
+        sortedCombos.forEach(combo => {
+            let stds = data.combos[combo].students;
+            stds.forEach(s => { csvContent += `"${combo}",${s.admNo},"${s.name}",${s.className || data.target},${s.average}\n`; });
+        });
+    }
+    else if(data.type === 'Prediction') {
+        csvContent += "Adm No,Student Name,";
+        csvContent += data.displayCols.join(",") + ",Predicted Average\n";
+        data.students.forEach(s => {
+            let row = [s.admNo, `"${s.name}"`];
+            data.displayCols.forEach(col => {
+                let cell = s.displayCells[col];
+                row.push(cell && cell.value !== undefined ? `"${cell.value} (${getGr(cell.value)})"` : "-");
+            });
+            row.push(s.avg);
+            csvContent += row.join(",") + "\n";
+        });
+    }
+    else if (data.type === 'ALPrediction') {
+        csvContent += "Adm No,Student Name,Predicted Average,Guessed Final Grades\n";
+        data.students.forEach(s => {
+            let gradeStr = Object.keys(s.subjects).map(k => `${s.subjects[k].name}: ${s.subjects[k].grade}`).join(" | ");
+            csvContent += `${s.admNo},"${s.name}",${s.avg},"${gradeStr}"\n`;
+        });
+    }
+    else if (data.type === 'ClassStudentList') {
+        csvContent += "No,Adm No,Student Name,Gender,Contact Number\n";
+        data.students.forEach((s, index) => { csvContent += `${index+1},${s.admNo},"${s.name}",${s.gender || 'Male'},"${s.contact || '-'}"\n`; });
+    }
+    else if (data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
+        csvContent += `Adm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}W Grades,S Grades,Subjects to Improve\n`;
+        data.students.forEach(s => {
+            let subDetails = s.details.map(d => `${d.subject} (${d.mark})`).join(' | ');
+            csvContent += `${s.admNo},"${s.name}",${data.type === 'RemedialGrade' ? s.className+',' : ''}${s.wCount},${s.sCount},"${subDetails}"\n`;
+        });
+    }
+    
+    let d = new Date();
+    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
+    let safeClassName = (data.cls || data.targetName || data.target || data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    let fileName = `${data.type || 'Export'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}.csv`;
+    
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
-
- window.exportReportToCSV = function() {
-    const data = window.currentReportData; 
-    if (!data) return alert("No report generated.");
-    let csvContent = "data:text/csv;charset=utf-8,";
-
-    if(data.type === 'Class') {
-        csvContent += `Class Master Sheet,Class: ${sanitizeText(data.cls)},Term: ${data.year} ${data.term}\n\n`;
-        csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Total,${data.isALevel ? 'Z-Score' : 'Average'},Rank\n`;
-        data.students.forEach(s => {
-            let row = [
-                `"${sanitizeText(s.admNo)}"`, 
-                `"${sanitizeText(s.name).replace(/"/g, '""')}"`
-            ];
-            data.displayCols.forEach(col => { 
-                let cell = s.displayMarks[col]; 
-                let val = cell && cell.value !== undefined ? cell.value : "-"; 
-                row.push(`"${val}"`); 
-            });
-            row.push(`"${s.total}"`, `"${data.isALevel ? s.overallZ : s.average}"`, `"${s.rank}"`);
-            csvContent += row.join(',') + "\n";
-        });
-    }
-    else if(data.type === 'Subject') {
-        csvContent += `Subject Marks,Subject: ${data.subject},Class: ${data.cls},Term: ${data.year} ${data.term}\n\n`;
-        csvContent += `Adm No,Student Name,Marks,Grade\n`;
-        data.students.forEach(s => { csvContent += `"${s.admNo}","${s.name}","${s.mark}","${s.grade}"\n`; });
-    }
-    else if(data.type === 'TopClass' || data.type === 'TopSection') {
-        let title = data.type === 'TopClass' ? "Class Top Students" : "Grade Top Students";
-        csvContent += `${title},Target: ${data.targetName},Term: ${data.year} ${data.term}\n\n`;
-        csvContent += `Rank,Adm No,Student Name,${data.type === 'TopSection' ? 'Class,' : ''}${data.isALevel ? 'Z-Score' : 'Average'},Total\n`;
-        data.students.forEach(s => { let rnk = data.type === 'TopSection' ? s.sectionRank : s.rank; csvContent += `"${rnk}","${s.admNo}","${s.name}",${data.type === 'TopSection' ? `"${s.className}",` : ''}"${data.isALevel ? s.overallZ : s.average}","${s.total}"\n`; });
-    }
-    else if(data.type === 'PassesSummaryClass' || data.type === 'PassesSummarySection') {
-        let title = data.type === 'PassesSummaryClass' ? "Passes Summary (Class)" : "Passes Summary (Grade)";
-        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\n`;
-        let sortedCombos = Object.keys(data.combos).sort((a,b) => data.combos[b].score - data.combos[a].score);
-        sortedCombos.forEach(combo => {
-            let stds = data.combos[combo].students;
-            csvContent += `Combo: ${combo} (${stds.length} Students)\nAdm No,Student Name,Class,Average\n`;
-            stds.forEach(s => { csvContent += `"${s.admNo}","${s.name}","${s.className || data.target}","${s.average}"\n`; });
-            csvContent += `\n`;
-        });
-    }
-    else if(data.type === 'Prediction') {
-        csvContent += `O/L AI Prediction,Class: ${data.cls}\n\n`;
-        csvContent += `Adm No,Student Name,${data.displayCols.join(',')},Predicted Avg\n`;
-        data.students.forEach(s => {
-            let row = [`"${s.admNo}"`, `"${s.name}"`];
-            
-            data.displayCols.forEach(col => { 
-                let cell = s.displayCells[col];
-                let val = cell && cell.value !== undefined ? `${cell.value} (${cell.actualName})` : "-";
-                row.push(`"${val}"`); 
-            });
-            
-            row.push(`"${s.avg}"`);
-            csvContent += row.join(',') + "\n";
-        });
-    }
-    else if (data.type === 'ClassStudentList') {
-        csvContent += `Class Student List,Class: ${data.cls}\nClass Teacher: ${data.ctName},Total Students: ${data.students.length}\n\n`;
-        csvContent += `No,Adm No,Student Name,Gender,Contact Number\n`;
-        data.students.forEach((s, index) => {
-            csvContent += `"${index + 1}","${s.admNo}","${s.name}","${s.gender || 'Male'}","${s.contact || '-'}"\n`;
-        });
-    }
-    else if (data.type === 'ALPrediction') {
-        csvContent += `A/L AI Prediction,Class: ${sanitizeText(data.cls)}\n\n`;
-        csvContent += `Adm No,Student Name,Predicted Avg,Advice Title,Advice Details\n`;
-        data.students.forEach(s => {
-            csvContent += `"${sanitizeText(s.admNo)}","${sanitizeText(s.name).replace(/"/g, '""')}","${s.avg}","${s.advice.title.replace(/"/g, '""')}","${s.advice.text.replace(/"/g, '""')}"\n`; 
-        });
-    }
-    else if(data.type === 'RemedialClass' || data.type === 'RemedialGrade') {
-        let title = data.type === 'RemedialClass' ? "Remedial Action Report (Class)" : "Remedial Action Report (Grade)";
-        csvContent += `${title},Target: ${data.target},Term: ${data.year} ${data.term}\n\nCore Subjects Summary\nSubject,W Grades (<35),S Grades (35-49)\n`;
-        Object.keys(data.subjectStats).forEach(sub => {
-            let stat = data.subjectStats[sub];
-            if(stat.W > 0 || stat.S > 0) csvContent += `"${sub}","${stat.W}","${stat.S}"\n`;
-        });
-        csvContent += `\nStudent Details\nAdm No,Student Name,${data.type === 'RemedialGrade' ? 'Class,' : ''}Total 'W' Grades,Total 'S' Grades,Subjects to Improve\n`;
-        data.students.forEach(s => {
-            let subDetails = s.details.map(d => `${d.subject}: ${d.mark} [${d.grade}]`).join(' | ');
-            csvContent += `"${s.admNo}","${s.name}",${data.type === 'RemedialGrade' ? `"${s.className}",` : ''}"${s.wCount}","${s.sCount}","${subDetails}"\n`;
-        });
-    }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${data.type}_Report_${data.year}_${data.term}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-  // INITIALIZATION
-  firebase.auth().onAuthStateChanged(async (user) => {
-      if (user) {
-          let email = user.email;
-          let nic = email.split('@')[0].toUpperCase();
-          if(nic === "ADMIN") {
-              let snapshot = await fetch(`${DB_URL}/teachers/ADMIN.json`).then(r => r.json()); 
-              if(!snapshot) { grantAccess({name: "Super Admin", role: "System Admin", isSetupMode: true}, "ADMIN"); } 
-              else { grantAccess(snapshot, "ADMIN"); }
-          } else {
-              let tData = await apiCall('teachers/' + nic);
-              if (tData && !tData.isFirstLogin) grantAccess(tData, nic);
-              else if (tData && tData.isFirstLogin) {
-                  tempSetupNic = nic;
-                  document.getElementById('loginBox').style.display = 'none';
-                  document.getElementById('setupBox').style.display = 'flex';
-              }
-              else firebase.auth().signOut();
-          }
-      } else {
-          document.getElementById('appLayout').style.display = 'none';
-          document.getElementById('setupBox').style.display = 'none';
-          document.getElementById('loginBox').style.display = 'flex';
-      }
-  });
-  // ==========================================
-  // CUSTOM ERROR HANDLING (නව කේත කොටස)
-  // ==========================================
-
-  window.showErrorAlert = function(message) {
-      const errorDiv = document.getElementById("error-message-box");
-      if (!errorDiv) return;
-      
-      errorDiv.innerText = message;
-      errorDiv.style.display = "block";
-      errorDiv.style.backgroundColor = "#fef2f2"; 
-      errorDiv.style.color = "#dc2626"; 
-      errorDiv.style.padding = "12px 20px";
-      errorDiv.style.border = "1px solid #fecaca";
-      errorDiv.style.borderRadius = "8px";
-      
-      // තත්පර 6කින් පසු Error එක ස්වයංක්‍රීයව මැකී යාමට සැලැස්වීම (අවශ්‍ය නම් පමණක්)
-      setTimeout(() => {
-          errorDiv.style.display = "none";
-      }, 6000);
-  };
-  // --- Real-time Mark Validation Function ---
-  window.validateMarkInput = function(input) {
-      let val = input.value.toUpperCase();
-      
-      // 1. වලංගු නොවන අකුරු සහ සංකේත මැකීම (Absent කේත සඳහා හැර)
-      if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
-          // ඉලක්කම් (0-9) හැර වෙනත් කුමන හෝ අකුරක් හෝ සංකේතයක් ඇත්නම් එය ස්වයංක්‍රීයව මකා දමයි
-          let cleanVal = val.replace(/[^0-9]/g, '');
-          input.value = cleanVal;
-      } else {
-          input.value = val;
-      }
-
-      // 2. ඇතුළත් කළ අගය 0 ත් 100 ත් අතර දැයි පරීක්ෂා කිරීම
-      if (input.value !== "") {
-          let numMark = Number(input.value);
-          if (!isNaN(numMark)) {
-              if (numMark > 100) {
-                  input.value = 100; // 100ට වඩා වැඩි නම් ස්වයංක්‍රීයව 100 බවට පත් කරයි
-              } else if (numMark < 0) {
-                  input.value = 0;   // ඍණ අගයක් නම් 0 බවට පත් කරයි
-              }
-          }
-      }
-      
-      // 3. දත්ත නිවැරදි කරගත් පසු Error Highlight වී ඇත්නම් එය සාමාන්‍ය තත්ත්වයට පත් කිරීම
-      input.style.borderColor = "var(--primary)";
-      input.style.backgroundColor = "#eff6ff";
-  };
-
-  window.fetchStudentReport = async function() {
-      try {
-          // ඔබගේ දත්ත ලබා ගැනීමේ කේතය මෙහි ලියන්න
-          // උදාහරණ: let data = await apiCall('students/' + admNo);
-
-      } catch (error) {
-          let userFriendlyMessage = "A system error occurred. Please try again."; 
-
-          if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('Access Denied'))) {
-              userFriendlyMessage = "You do not have permission to view data for this class. Please contact the system administrator.";
-          } 
-          else if (error.code === 'NETWORK_ERROR' || !navigator.onLine) {
-              userFriendlyMessage = "Your internet connection is disconnected. Please check your connection and try again.";
-          } 
-          else if (error.message && (error.message.includes('null') || error.message.includes('not found'))) {
-              userFriendlyMessage = "Marks have not been entered for this student yet.";
-          }
-
-          // UI එකේ Error එක පෙන්වීම
-          showErrorAlert(userFriendlyMessage);
-      }
-  };
 
 })();
-  
