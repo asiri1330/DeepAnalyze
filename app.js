@@ -1004,11 +1004,11 @@
       html += `</tbody></table></div>`;
       if (window.perms.editMarks) {
           // Edit සහ Bulk Delete පහසුකම සඳහා බොත්තම්
-         html += `<div style="display:flex; gap:12px; margin-top:25px; flex-wrap: wrap;">
-            <button class="btn-success" onclick="saveMarks()" id="saveBtn" style="flex: 1 1 200px; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);"><span class="material-symbols-outlined icon-small">save</span> Save Marks</button>
-            <button class="btn-danger" onclick="deleteAllMarksForSubject()" id="deleteMarksBtn" style="flex: 1 1 200px; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);"><span class="material-symbols-outlined icon-small">delete_sweep</span> Delete All</button>
-         </div>
-         <div id="saveMsg" style="text-align:center; margin-top:15px; font-weight:800; font-size:15px;"></div>`;
+          html += `<div style="display:flex; gap:15px; margin-top:25px;">
+                      <button class="btn-success" onclick="saveMarks()" id="saveBtn" style="flex:2; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);"><span class="material-symbols-outlined icon-small">save</span> Save Marks</button>
+                      <button class="btn-danger" onclick="deleteAllMarksForSubject()" id="deleteMarksBtn" style="flex:1; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);"><span class="material-symbols-outlined icon-small">delete_sweep</span> Delete All</button>
+                   </div>
+                   <div id="saveMsg" style="text-align:center; margin-top:15px; font-weight:800; font-size:15px;"></div>`;
       }
       cont.innerHTML = html;
       setTimeout(() => { let firstInput = document.querySelector('.mark-input'); if(firstInput && window.perms.editMarks) firstInput.focus(); }, 100);
@@ -1359,11 +1359,11 @@ function routeReportGeneration(type) {
           window.currentReportData = { year: yr, term: trm, targetName: cls, ctName: ctName, students: topStudents, type: 'TopClass', isALevel: isALevelReport };
 
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
-                        <div><h3 style="margin:0; color:#f59e0b; font-size:24px; font-weight:900;"><span class="material-symbols-outlined" style="vertical-align:middle;">workspace_premium</span> Top Students (Class)</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Term: ${yr} ${trm}</p></div>
-                        <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
-                        </div>
+                          <div><h3 style="margin:0; color:#f59e0b; font-size:24px; font-weight:900;"><span class="material-symbols-outlined" style="vertical-align:middle;">workspace_premium</span> Top Students (Class)</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Term: ${yr} ${trm}</p></div>
+                          <div style='display:flex; gap:12px;'>
+                              <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                              <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                          </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px; text-align:center;">Rank</th><th style="width:100px;">Adm No</th><th>Student Name</th><th style="text-align:center;">Total</th><th style="text-align:center;">${isALevelReport ? 'Z-Score' : 'Average'}</th></tr></thead><tbody>`;
 
@@ -1372,11 +1372,7 @@ function routeReportGeneration(type) {
               html += `<tr><td style="text-align:center; font-weight:900; font-size:16px; color:#f59e0b;">${medal}${s.rank}</td><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td style="text-align:center; font-weight:800;">${s.total}</td><td style="text-align:center; font-weight:800; color:var(--primary);">${isALevelReport ? s.overallZ : s.average}</td></tr>`;
           });
           html += `</tbody></table>`;
-         requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch(err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1461,11 +1457,7 @@ function routeReportGeneration(type) {
               html += `<tr><td style="text-align:center; font-weight:900; font-size:16px; color:#8b5cf6;">${medal}${s.sectionRank}</td><td style="font-weight:700;">${s.admNo}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td><span class="badge badge-gray">${s.className}</span></td><td style="text-align:center; font-weight:800;">${s.total}</td><td style="text-align:center; font-weight:800; color:var(--primary);">${isALevelReport ? s.overallZ : s.average}</td></tr>`;
           });
           html += `</tbody></table>`;
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch(err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1761,9 +1753,16 @@ async function generateClassMasterReport() {
           // --- වෙනස් කරන ලද බොත්තම් අඩංගු HTML කොටස ---
           let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                         <div><h3 style="margin:0; color:var(--primary); font-size:24px; font-weight:900;">Class Master Sheet</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Class: <span style="color:var(--text-main);">${cls}</span> | Teacher: <span style="color:var(--text-main);">${ctName}</span> | Term: ${yr} ${trm}</p></div>
-                        <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
-                            <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                            <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                        <div style='display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;'>
+                            <button class='btn-danger btn-small' style='background-color:#991b1b; border:none; padding:8px 15px;' onclick='downloadOnlyClassMasterPDF()'>
+                                <span class="material-symbols-outlined icon-small">view_list</span> Download Master ONLY
+                            </button>
+                            <button class='btn-danger btn-small' onclick='downloadReportPDF()'>
+                                <span class="material-symbols-outlined icon-small">picture_as_pdf</span> Full PDF
+                            </button>
+                            <button class='btn-success btn-small' onclick='exportReportToCSV()'>
+                                <span class="material-symbols-outlined icon-small">table_view</span> CSV
+                            </button>
                         </div>
                       </div>
                       <table class='ui-data-table'><thead><tr><th style="width:70px;">Adm No</th><th style="width:200px; white-space:nowrap;">Student Name</th>`;
@@ -1809,11 +1808,7 @@ async function generateClassMasterReport() {
                html += `</tbody></table></div></div>`;
           }
 
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1880,11 +1875,7 @@ async function generateClassMasterReport() {
           });
           
           html += `</tbody></table>`;
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -1920,11 +1911,7 @@ async function generateClassMasterReport() {
               displayCols.forEach(col => { let cellData = s.displayMarks[col]; let val = cellData && cellData.value !== undefined ? cellData.value : "-"; let finalSubjName = (cellData && cellData.actualSubj && cellData.actualSubj !== col) ? `${col} <span style="font-size:11px; color:#64748b;">(${cellData.actualSubjCode || cellData.actualSubj})</span>` : col; html += `<tr><td style="border:1px solid #cbd5e1; padding:10px; font-weight:600;">${finalSubjName}</td><td style="border:1px solid #cbd5e1; padding:10px; text-align:center; font-weight:800; font-size:14px;">${val}</td><td style="border:1px solid #cbd5e1; padding:10px; text-align:center; font-weight:900; font-size:14px; color:var(--primary);">${getGr(val)}</td></tr>`; });
               html += `</tbody></table><div style="display:flex; justify-content:space-around; margin-top:20px; padding:15px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; font-size:15px; font-weight:900;"><span>Total: <span style="color:var(--primary);">${s.total}</span></span><span>${isALevelReport ? 'Z-Score: <span style="color:var(--primary);">'+s.overallZ+'</span>' : 'Avg: <span style="color:var(--primary);">'+s.average+'</span>'}</span><span style="color:var(--success);">Rank: ${s.rank}</span></div><p style="text-align:center; font-size:12px; font-weight:600; color:var(--text-muted); margin-top:20px;">(Sample card shown. Click "Print Cards" to view all.)</p></div>`;
           }
-          html += `</div>`; requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          html += `</div>`; htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -2000,9 +1987,9 @@ async function generateClassMasterReport() {
       
       let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:15px; margin-bottom:25px;">
                     <div><h3 style="margin:0; color:var(--info); font-size:24px; font-weight:900;">Subject Marks</h3><p style="margin:6px 0 0 0; color:var(--text-muted); font-weight:700;">Subject: <span style="color:var(--text-main);">${actualSubjName}</span> | Class: ${cls} | Year: ${yr} ${trm}</p></div>
-                    <div style='display:flex; gap:10px; flex-wrap: wrap; margin-top: 15px;'>
-                        <button class='btn-danger btn-small' onclick='downloadReportPDF()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
-                        <button class='btn-success btn-small' onclick='exportReportToCSV()' style='flex: 1 1 120px; justify-content: center;'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
+                    <div style='display:flex; gap:12px;'>
+                        <button class='btn-danger btn-small' onclick='downloadReportPDF()'><span class="material-symbols-outlined icon-small">picture_as_pdf</span> PDF</button>
+                        <button class='btn-success btn-small' onclick='exportReportToCSV()'><span class="material-symbols-outlined icon-small">table_view</span> CSV</button>
                     </div>
                   </div>`;
                   
@@ -2072,11 +2059,7 @@ async function generateClassMasterReport() {
              html += `</div></div>`;
           });
           
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -2158,11 +2141,7 @@ async function generateClassMasterReport() {
           });
           
           html += `</tbody></table>`;
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
 
           // Render Chart
           const ctx = document.getElementById('remedialChart');
@@ -2337,11 +2316,7 @@ async function generateClassMasterReport() {
           });
           html += `</tbody></table><p style="font-size:13px; font-weight:600; color:var(--text-muted); margin-top:15px;">* Predicted scores are estimated using historical grade averages.</p>`;
           
-         requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { 
           htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:800;">Error: ${err.message}</p>`; 
           btn.disabled = false; btn.innerHTML = `Generate Report`;
@@ -2482,11 +2457,7 @@ async function generateClassMasterReport() {
           });
           html += `</div>`;
           
-          requestAnimationFrame(() => {
-    htmlContainer.innerHTML = html; 
-    btn.disabled = false; 
-    btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
-});
+          htmlContainer.innerHTML = html; btn.disabled = false; btn.innerHTML = `<span class="material-symbols-outlined icon-small">play_circle</span> Generate Report`;
       } catch (err) { htmlContainer.innerHTML = `<p style="color:var(--danger); font-weight:bold;">Error: ${err.message}</p>`; btn.disabled = false; btn.innerHTML = `Generate Report`;}
   }
 
@@ -3433,31 +3404,35 @@ async function generateClassMasterReport() {
           errorDiv.style.display = "none";
       }, 6000);
   };
-  // යාවත්කාලීන කළ validateMarkInput ශ්‍රිතය (කීබෝඩ් එක හිරවීම වළක්වයි)
-window.validateMarkInput = function(input) {
-    // Timeout එකක් යෙදීමෙන් ටයිප් කර අවසන් වනතුරු ගණනය කිරීම් ප්‍රමාද කරයි
-    clearTimeout(input.validationTimeout);
-    
-    input.validationTimeout = setTimeout(() => {
-        let val = input.value.toUpperCase();
-        
-        if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
-            let cleanVal = val.replace(/[^0-9]/g, '');
-            if(input.value !== cleanVal) input.value = cleanVal;
-        }
+  // --- Real-time Mark Validation Function ---
+  window.validateMarkInput = function(input) {
+      let val = input.value.toUpperCase();
+      
+      // 1. වලංගු නොවන අකුරු සහ සංකේත මැකීම (Absent කේත සඳහා හැර)
+      if (val !== "A" && val !== "AB" && val !== "ABS" && val !== "ABSENT") {
+          // ඉලක්කම් (0-9) හැර වෙනත් කුමන හෝ අකුරක් හෝ සංකේතයක් ඇත්නම් එය ස්වයංක්‍රීයව මකා දමයි
+          let cleanVal = val.replace(/[^0-9]/g, '');
+          input.value = cleanVal;
+      } else {
+          input.value = val;
+      }
 
-        if (input.value !== "") {
-            let numMark = Number(input.value);
-            if (!isNaN(numMark)) {
-                if (numMark > 100) input.value = 100;
-                else if (numMark < 0) input.value = 0;
-            }
-        }
-        
-        input.style.borderColor = "var(--primary)";
-        input.style.backgroundColor = "#eff6ff";
-    }, 150); // මිලි තත්පර 150ක් ප්‍රමාද කරයි
-};
+      // 2. ඇතුළත් කළ අගය 0 ත් 100 ත් අතර දැයි පරීක්ෂා කිරීම
+      if (input.value !== "") {
+          let numMark = Number(input.value);
+          if (!isNaN(numMark)) {
+              if (numMark > 100) {
+                  input.value = 100; // 100ට වඩා වැඩි නම් ස්වයංක්‍රීයව 100 බවට පත් කරයි
+              } else if (numMark < 0) {
+                  input.value = 0;   // ඍණ අගයක් නම් 0 බවට පත් කරයි
+              }
+          }
+      }
+      
+      // 3. දත්ත නිවැරදි කරගත් පසු Error Highlight වී ඇත්නම් එය සාමාන්‍ය තත්ත්වයට පත් කිරීම
+      input.style.borderColor = "var(--primary)";
+      input.style.backgroundColor = "#eff6ff";
+  };
 
   window.fetchStudentReport = async function() {
       try {
