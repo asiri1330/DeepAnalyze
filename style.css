@@ -240,7 +240,7 @@
   .pdf-mode {
     background-color: white !important;
     color: black !important;
-    padding: 20px !important; /* PDF එකේ ඇතුලත margin */
+    padding: 20px !important;
     width: 100% !important;
     box-sizing: border-box;
   }
@@ -259,11 +259,12 @@
   .pdf-mode table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 12px !important; /* PDF එකේදී වගුවේ අකුරු ප්‍රමාණය */
+    font-size: 12px !important;
   }
 
+  /* මෙහි #ddd වෙනුවට #000000 භාවිතා කිරීමෙන් lines සියල්ල සමානව දිස්වේ */
   .pdf-mode th, .pdf-mode td {
-    border: 1px solid #ddd !important;
+    border: 1px solid #000000 !important; 
     padding: 8px !important;
   }
 
@@ -272,7 +273,6 @@
     color: black !important;
   }
 
-  /* PDF එකට අනවශ්‍ය කොටස් (බොත්තම් වැනි) සඟවා තැබීම (අවශ්‍ය නම්) */
   .pdf-mode .no-print {
     display: none !important;
   }
