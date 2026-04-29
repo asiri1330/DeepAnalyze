@@ -256,15 +256,14 @@
     color: #333 !important;
   }
 
-  .pdf-mode table {
+ .pdf-mode table {
     width: 100% !important;
-    border-collapse: collapse !important;
+    border-collapse: collapse !important; /* Lines දෙකක් එකක් බවට පත් කිරීම */
     font-size: 12px !important;
   }
 
-  /* මෙහි #ddd වෙනුවට #000000 භාවිතා කිරීමෙන් lines සියල්ල සමානව දිස්වේ */
   .pdf-mode th, .pdf-mode td {
-    border: 1px solid #000000 !important; 
+    border: 1px solid #000000 !important; /* 1px ඝනකම සහ සම්පූර්ණ කළු පැහැය */
     padding: 8px !important;
   }
 
