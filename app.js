@@ -101,12 +101,15 @@
         if (data) {
             memoryCache[cacheKey] = data; 
             
-            // දත්ත IndexedDB එකට දැමීම තිරය හිර නොවන සේ පසුබිමෙන් සිදු කිරීම
-            setTimeout(async () => {
-                try {
-                    await saveToIDB(cacheKey, data, Date.now());
-                } catch(e) { console.warn("IndexedDB save error:", e); }
-            }, 50); 
+            const saveIDB = async () => {
+             try { await saveToIDB(cacheKey, data, Date.now()); } 
+             catch(e) { console.warn("IndexedDB save error:", e); }
+            };
+         if ('requestIdleCallback' in window) {
+          requestIdleCallback(saveIDB, { timeout: 2000 });
+         } else {
+          setTimeout(saveIDB, 100);
+         }
         }
         return data;
     }
@@ -118,7 +121,13 @@
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), wait);
         };
-    }                                                                  
+    } 
+   function safeDestroyChart(chartInstance) {
+    if (chartInstance && typeof chartInstance.destroy === 'function') {
+        try { chartInstance.destroy(); } catch(e) { console.warn("Chart destroy skipped:", e); }
+    }
+    return null;
+   }
 
     // Fixed Hash Function to work on both Local file:// and HTTPS
     async function hashData(string) {
@@ -162,28 +171,33 @@
 
   async function refreshGlobalCache(force = false) {
     try {
-      allTeachersData = (await fetchWithCache('teachers', force)) || {};
-      allSubjectsData = (await fetchWithCache('subjects', force)) || {}; 
-      allClassesData = (await fetchWithCache('classes', force)) || {}; 
-      // allStudentsData සම්පූර්ණයෙන් Download කිරීම මෙතැනින් ඉවත් කර ඇත (RAM & Bandwidth ඉතිරි කිරීම සඳහා)
-      
-      let uniqueClasses = Object.keys(allClassesData).sort();
-      if(uniqueClasses.length === 0) { uniqueClasses = [...new Set(Object.values(allStudentsData).map(s => s.class))].filter(Boolean).sort(); } 
-      
-      populateClassDropdowns(uniqueClasses); populateSubjectDropdowns(); populateTeacherDropdowns(); updateDashboardStats();
+        // ✅ සමාන්තරව දත්ත ලබා ගැනීම (වේගවත්)
+        const [tData, sData, cData] = await Promise.all([
+            fetchWithCache('teachers', force),
+            fetchWithCache('subjects', force),
+            fetchWithCache('classes', force)
+        ]);
 
-      if(currentUser) {
-          let myClassObj = Object.entries(allClassesData).find(([cName, cData]) => cData.teacher === currentUser.name);
-          window.assignedClass = myClassObj ? myClassObj[0] : null;
-          if(window.applyRBAC) window.applyRBAC();
-      }
+        allTeachersData = tData || {};
+        allSubjectsData = sData || {};
+        allClassesData = cData || {};
 
-      if(document.getElementById('secStudents').style.display === 'block') filterStudents();
-      if(document.getElementById('secTeachers').style.display === 'block') filterTeachers();
-      if(document.getElementById('secSubjects').style.display === 'block') filterSubjects();
-      if(document.getElementById('secClasses').style.display === 'block') filterClasses(); 
+        let uniqueClasses = Object.keys(allClassesData).sort();
+        if(uniqueClasses.length === 0) { uniqueClasses = [...new Set(Object.values(allStudentsData).map(s => s.class))].filter(Boolean).sort(); } 
+        
+        populateClassDropdowns(uniqueClasses); populateSubjectDropdowns(); populateTeacherDropdowns(); updateDashboardStats();
+        
+        if(currentUser) {
+            let myClassObj = Object.entries(allClassesData).find(([cName, cData]) => cData.teacher === currentUser.name);
+            window.assignedClass = myClassObj ? myClassObj[0] : null;
+            if(window.applyRBAC) window.applyRBAC();
+        }
+        if(document.getElementById('secStudents').style.display === 'block') filterStudents();
+        if(document.getElementById('secTeachers').style.display === 'block') filterTeachers();
+        if(document.getElementById('secSubjects').style.display === 'block') filterSubjects();
+        if(document.getElementById('secClasses').style.display === 'block') filterClasses(); 
     } catch(err) { console.error("Cache Error:", err); }
-  }
+}
 
   // --- NEW: Role Based Access Control Application ---
   window.applyRBAC = function() {
@@ -1220,7 +1234,7 @@
     
     document.getElementById('progChartLatest').parentElement.style.display = 'block'; document.getElementById('progChartHistory').parentElement.style.display = 'block'; 
     
-    let ctxBar = document.getElementById('progChartLatest').getContext('2d'); if(progChartLatest) progChartLatest.destroy(); 
+    let ctxBar = document.getElementById('progChartLatest').getContext('2d'); progChartLatest = safeDestroyChart(progChartLatest);
     progChartLatest = new Chart(ctxBar, { type: 'bar', data: { labels: latestLabels, datasets: [{ label: `Latest Term (${latestTerm})`, data: latestData, backgroundColor: latestColors, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: `Latest Term Marks (${latestTerm})`, font: { family: 'Inter', size: 15, weight: 'bold' } } }, scales: { y: { beginAtZero: true, max: 100 } } } });
 
     let ctxLine = document.getElementById('progChartHistory').getContext('2d'); if(progChartHistory) progChartHistory.destroy(); 
@@ -2139,7 +2153,7 @@ async function generateClassMasterReport() {
           // Render Chart
           const ctx = document.getElementById('remedialChart');
           if(ctx) {
-              if (remedialChartInstance) remedialChartInstance.destroy();
+              remedialChartInstance = safeDestroyChart(remedialChartInstance);
               
               // දුර්වලතා වැඩි විෂයන් මුලින් පෙන්වීමට අනුපිළිවෙලට සැකසීම (Sort by total W + S)
               const sortedLabels = Object.keys(subjectStats).sort((a, b) => {
@@ -2588,7 +2602,7 @@ async function generateClassMasterReport() {
       let secData = allKeys.map(k => data.secCombos[k] || 0);
 
       let ctx = document.getElementById('passComboChart').getContext('2d');
-      if(passComboChartInstance) passComboChartInstance.destroy();
+      passComboChartInstance = safeDestroyChart(passComboChartInstance);
 
       passComboChartInstance = new Chart(ctx, {
           type: 'bar',
@@ -2662,7 +2676,7 @@ async function generateClassMasterReport() {
       });
 
       let ctx = document.getElementById('compareChart').getContext('2d');
-      if(compareChartInstance) compareChartInstance.destroy();
+      compareChartInstance = safeDestroyChart(compareChartInstance);
 
       compareChartInstance = new Chart(ctx, {
           type: 'bar',
