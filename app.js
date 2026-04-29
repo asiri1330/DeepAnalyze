@@ -1036,7 +1036,6 @@
     let isBucket = subKey.startsWith('BUCKET:::'); 
     let actualBucketName = isBucket ? subKey.split(':::')[1] : null; 
     
-    // 1. විචල්‍යයන් if/else එකට ඉහළින් let හරහා declare කිරීම
     let bucketSubjectsKeys = [];
     let mGradeType = 'ol_main';
     let mBasket = "";
@@ -1045,7 +1044,6 @@
         bucketSubjectsKeys = Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName); 
     } 
     else { 
-        // 2. මෙහිදී අගයන් පමණක් assign කිරීම සිදු කරයි (let භාවිත නොකරයි)
         let sData = allSubjectsData[subKey] || {}; 
         mGradeType = sData.gradeType || 'ol_main'; 
         mBasket = sData.basketName || ""; 
@@ -1087,7 +1085,6 @@
             }
         } else {
             updates[`marks/${yr}/${trm}/${admNo}/${subKey}`] = val; 
-            // 3. ඉහතින් හඳුන්වා දුන් mGradeType සහ mBasket මෙහිදී කිසිදු ගැටළුවකින් තොරව භාවිත කළ හැක
             updates[`class_subjects/${yr}/${trm}/${cls}/${subKey}`] = { grade: mGradeType, type: (mGradeType.includes('basket') || mGradeType.includes('common') || mBasket !== "") ? 'basket' : 'main', basketName: mBasket || "" }; 
         }
     }
@@ -1095,6 +1092,11 @@
     btn.disabled = true; msg.style.color = "var(--primary)"; msg.innerText = "Saving..."; 
     try { 
         await apiCall('', 'PATCH', updates); 
+        
+        // ✅ Save කිරීමෙන් පසු Cache එක අනිවාර්යයෙන්ම Update කිරීම
+        let path = `marks/${yr}/${trm}`;
+        await fetchWithCache(path, true);
+        
         btn.disabled = false; msg.style.color = "var(--success)"; msg.innerText = "Marks Saved Successfully!"; 
         setTimeout(()=>msg.innerText="",3000); 
     } 
@@ -1103,9 +1105,7 @@
     }
 }
 
-  // --- අලුතින් එක් කළ Delete Functions ---
-  
-  // තනි සිසුවෙකුගේ ලකුණු මකා දැමීම (Optimized)
+// තනි සිසුවෙකුගේ ලකුණු මකා දැමීම (Optimized with Cache Fix)
 window.deleteSingleMark = async function(admNo) {
     let yr = document.getElementById('yearSelect').value;
     let trm = document.getElementById('termSelect').value;
@@ -1121,13 +1121,16 @@ window.deleteSingleMark = async function(admNo) {
     if(!confirm(`Are you sure you want to DELETE the mark for student ${admNo}?`)) return;
     
     try {
-        await apiCall(`marks/${yr}/${trm}/${admNo}/${actualSubKey}`, 'DELETE');
+        // ✅ Firebase Path URL ගැටළු මඟහරවා ගැනීමට PATCH (null) භාවිතා කිරීම
+        let updates = {};
+        updates[`marks/${yr}/${trm}/${admNo}/${actualSubKey}`] = null;
+        await apiCall('', 'PATCH', updates);
         
-        // ✅ Memory Cache Clear කිරීම (වේගවත් Sync සඳහා)
-        let cacheKey = `elite_cache_marks_${yr}_${trm.replace(/\s+/g, '_')}`;
-        if (memoryCache[cacheKey]) delete memoryCache[cacheKey];
+        // ✅ Database එකෙන් අලුත් දත්ත ගෙන Memory හා IndexedDB Cache දෙකම එකවර අලුත් කිරීම
+        let path = `marks/${yr}/${trm}`;
+        await fetchWithCache(path, true);
         
-        // ✅ UI එක වහාම යාවත්කාලීන කිරීම
+        // UI එක වහාම යාවත්කාලීන කිරීම
         let inputEl = document.getElementById(`m_${admNo}`);
         if(inputEl) { inputEl.value = ""; inputEl.style.borderColor = "#cbd5e1"; }
         if(isBucket) { let sel = document.getElementById(`bsel_${admNo}`); if(sel) sel.value = ""; }
@@ -1140,7 +1143,7 @@ window.deleteSingleMark = async function(admNo) {
     }
 };
 
-  // මුළු පංතියේම අදාළ විෂයයේ ලකුණු එකවර මකා දැමීම (Optimized)
+// මුළු පංතියේම අදාළ විෂයයේ ලකුණු එකවර මකා දැමීම (Optimized with Cache Fix)
 window.deleteAllMarksForSubject = async function() {
     let yr = document.getElementById('yearSelect').value;
     let trm = document.getElementById('termSelect').value;
@@ -1169,9 +1172,9 @@ window.deleteAllMarksForSubject = async function() {
     try {
         await apiCall('', 'PATCH', updates);
         
-        // ✅ Cache Clear & Table Reload
-        let cacheKey = `elite_cache_marks_${yr}_${trm.replace(/\s+/g, '_')}`;
-        if (memoryCache[cacheKey]) delete memoryCache[cacheKey];
+        // ✅ Database එකෙන් අලුත් දත්ත ගෙන Memory හා IndexedDB Cache දෙකම එකවර අලුත් කිරීම
+        let path = `marks/${yr}/${trm}`;
+        await fetchWithCache(path, true);
         
         if(msg) { msg.style.color = "var(--success)"; msg.innerText = "All marks deleted! Reloading..."; }
         setTimeout(()=> { if(msg) msg.innerText = ""; loadStudentsToMark(); }, 800);
