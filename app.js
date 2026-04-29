@@ -1107,57 +1107,110 @@
   
   // තනි සිසුවෙකුගේ ලකුණු මකා දැමීම
   window.deleteSingleMark = async function(admNo) {
-      let yr = document.getElementById('yearSelect').value, trm = document.getElementById('termSelect').value, subKey = document.getElementById('marksSubjectSelect').value;
-      let actualSubKey = subKey;
-      let isBucket = subKey.startsWith('BUCKET:::');
-      
-      if (isBucket) {
-          let sel = document.getElementById(`bsel_${admNo}`);
-          actualSubKey = sel ? sel.value : "";
-          if (!actualSubKey) return alert("No subject assigned to delete.");
-      }
-
-      if(!confirm(`Are you sure you want to completely DELETE the mark for student ${admNo}?`)) return;
-
-      try {
-          await apiCall(`marks/${yr}/${trm}/${admNo}/${actualSubKey}`, 'DELETE');
-          document.getElementById(`m_${admNo}`).value = ""; // Clear visual input
-          if(isBucket) document.getElementById(`bsel_${admNo}`).value = "";
-      } catch(e) {
-          alert("Error deleting mark.");
-      }
-  }
+    let yr = document.getElementById('yearSelect').value;
+    let trm = document.getElementById('termSelect').value;
+    let subKey = document.getElementById('marksSubjectSelect').value;
+    
+    let actualSubKey = subKey;
+    let isBucket = subKey.startsWith('BUCKET:::');
+    
+    if (isBucket) {
+        let sel = document.getElementById(`bsel_${admNo}`);
+        actualSubKey = sel ? sel.value : "";
+        if (!actualSubKey) return alert("No subject assigned to delete.");
+    }
+    
+    if(!confirm(`Are you sure you want to DELETE the mark for student ${admNo}?`)) return;
+    
+    try {
+        // ✅ Firebase DELETE request - නිවැරදි path එක
+        let deletePath = `marks/${yr}/${trm}/${admNo}/${actualSubKey}`;
+        await apiCall(deletePath, 'DELETE');
+        
+        // ✅ UI එක වහාම update කිරීම
+        let inputEl = document.getElementById(`m_${admNo}`);
+        if(inputEl) {
+            inputEl.value = "";
+            inputEl.style.borderColor = "#cbd5e1";
+            inputEl.style.backgroundColor = "#ffffff";
+        }
+        if(isBucket) {
+            let sel = document.getElementById(`bsel_${admNo}`);
+            if(sel) sel.value = "";
+        }
+        
+        // ✅ Success message
+        let msg = document.getElementById('saveMsg');
+        if(msg) {
+            msg.style.color = "var(--success)";
+            msg.innerText = "Mark deleted successfully!";
+            setTimeout(() => { msg.innerText = ""; }, 2000);
+        }
+    } catch(e) {
+        console.error("Delete error:", e);
+        alert("Error deleting mark: " + e.message);
+    }
+}
 
   // මුළු පංතියේම අදාළ විෂයයේ ලකුණු එකවර මකා දැමීම
   window.deleteAllMarksForSubject = async function() {
-      let yr = document.getElementById('yearSelect').value, trm = document.getElementById('termSelect').value, cls = document.getElementById('marksClassSelect').value, subKey = document.getElementById('marksSubjectSelect').value;
-      if(!confirm(`Are you sure you want to completely DELETE ALL marks for this subject in ${cls}?`)) return;
-      
-      let isBucket = subKey.startsWith('BUCKET:::');
-      let actualBucketName = isBucket ? subKey.split(':::')[1] : null;
-      let bucketSubjectsKeys = isBucket ? Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName) : [];
-
-      let inputs = document.getElementsByClassName('mark-input');
-      let updates = {};
-      
-      for(let i=0, len=inputs.length; i<len; i++) { 
-          let admNo = inputs[i].id.split('_')[1];
-          if(isBucket) {
-              bucketSubjectsKeys.forEach(k => { updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; });
-          } else {
-              updates[`marks/${yr}/${trm}/${admNo}/${subKey}`] = null;
-          }
-      }
-      
-      let msg = document.getElementById('saveMsg');
-      msg.style.color = "var(--danger)"; msg.innerText = "Deleting all marks..."; 
-      try { 
-          await apiCall('', 'PATCH', updates); 
-          msg.style.color = "var(--success)"; msg.innerText = "All Marks Deleted Successfully!"; 
-          setTimeout(()=> { msg.innerText=""; loadStudentsToMark(); }, 2000); 
-      } 
-      catch(e){ msg.style.color="var(--danger)"; msg.innerText="Error Deleting!";}
-  }
+    let yr = document.getElementById('yearSelect').value;
+    let trm = document.getElementById('termSelect').value;
+    let cls = document.getElementById('marksClassSelect').value;
+    let subKey = document.getElementById('marksSubjectSelect').value;
+    
+    if(!confirm(`Are you sure you want to DELETE ALL marks for this subject in ${cls}?`)) return;
+    
+    let isBucket = subKey.startsWith('BUCKET:::');
+    let actualBucketName = isBucket ? subKey.split(':::')[1] : null;
+    let bucketSubjectsKeys = isBucket ? 
+        Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName) : [];
+    
+    let inputs = document.getElementsByClassName('mark-input');
+    let updates = {};
+    
+    for(let i=0, len=inputs.length; i<len; i++) {
+        let admNo = inputs[i].id.split('_')[1];
+        if(isBucket) {
+            // ✅ Bucket: සියලුම subjects null කරන්න
+            bucketSubjectsKeys.forEach(k => { 
+                updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; 
+            });
+        } else {
+            // ✅ Single subject: එම subject පමණක් null කරන්න
+            updates[`marks/${yr}/${trm}/${admNo}/${subKey}`] = null;
+        }
+    }
+    
+    let msg = document.getElementById('saveMsg');
+    if(msg) {
+        msg.style.color = "var(--danger)";
+        msg.innerText = "Deleting all marks...";
+    }
+    
+    try {
+        // ✅ PATCH request with null values = Firebase එකෙන් delete වේ
+        await apiCall('', 'PATCH', updates);
+        
+        if(msg) {
+            msg.style.color = "var(--success)";
+            msg.innerText = "All marks deleted! Reloading...";
+        }
+        
+        // ✅ UI එක නැවත ලෝඩ් කිරීම
+        setTimeout(() => {
+            if(msg) msg.innerText = "";
+            loadStudentsToMark(); // ✅ Table එක නැවත generate කරයි
+        }, 1500);
+        
+    } catch(e) {
+        console.error("Bulk delete error:", e);
+        if(msg) {
+            msg.style.color = "var(--danger)";
+            msg.innerText = "Error: " + e.message;
+        }
+    }
+}
 
   // --- Absent වූ විට Grade එක "-" ලෙස දැක්වීමට අදාළ වෙනස ---
   function getGr(m) { 
@@ -3112,69 +3165,118 @@ async function generateClassMasterReport() {
     setTimeout(() => { printWindow.print(); }, 500);
 }
 
-// --- Download Only Class Master PDF (Without Analytics/Stats) ---
+// ==========================================
+// FIXED: Download ONLY Class Master PDF
+// ==========================================
 window.downloadOnlyClassMasterPDF = function() {
-    const data = window.currentReportData;
-    if (!data || data.type !== 'Class') return alert("Please generate the Class Master Report first.");
-    
-    let oldIframe = document.getElementById('mobilePrintFrame');
-    if (oldIframe) { oldIframe.remove(); } 
-
-    let iframe = document.createElement('iframe');
-    iframe.id = 'mobilePrintFrame';
-    iframe.style.position = 'absolute';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    iframe.style.opacity = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-    
-    const printWindow = iframe.contentWindow;
-    let repClass = data.cls || "";
-    let repTeacher = data.ctName || "..........................";
-    const isLandscape = data.displayCols.length > 8; 
-    const orientation = isLandscape ? 'landscape' : 'portrait';
-    
-    let finalHtml = `<html><head><style>
-    @page { size: A4 ${orientation}; margin: 10mm; } 
-    * { color: #000 !important; font-family: 'Inter', sans-serif; text-rendering: optimizeLegibility; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
-    body { margin: 0; text-transform: capitalize;} 
-    .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; } 
-    .header-container h1 { margin: 0; font-size: 18px; font-weight:900; text-transform: uppercase;} 
-    .header-container h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: bold;} 
-    .info-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; font-size: 11px;} 
-    .official-table { width: 100%; border-collapse: collapse; table-layout: auto; } 
-    .official-table th, .official-table td { border: 1px solid #000 !important; padding: 5px; text-align: left !important; font-size: 10px; font-weight:bold; } 
-    .official-table th { vertical-align: bottom; border-bottom: 1.5px solid #000 !important; text-transform:uppercase; white-space: nowrap; } 
-    .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: 4px; font-size:10px; white-space:nowrap; text-align: left !important;} 
-    </style></head><body>`;
-    
-    finalHtml += `<div class="header-container"><div style="width: 70px; height: 70px;">${SYS_LOGO_SVG}</div><div style="text-align:left;"><h1>R/Gankanda Central College</h1><h2>Class Master Sheet (Marks Only) - ${data.year} ${data.term}</h2></div></div><div class="info-row"><span>Class: ${sanitizeText(repClass)}</span><span>Class Teacher: ${repTeacher}</span></div><table class="official-table"><thead><tr><th style="width:1%;">Adm No</th><th style="width:99%;">Student Name</th>`;
-    data.displayCols.forEach(c => finalHtml += `<th><span class="vertical-text">${c}</span></th>`);
-    finalHtml += `<th><span class="vertical-text">Total</span></th><th><span class="vertical-text">${data.isALevel ? 'Z-Score' : 'Average'}</span></th><th><span class="vertical-text">Rank</span></th></tr></thead><tbody>`;
-    
-    data.students.forEach(s => {
-        finalHtml += `<tr><td>${s.admNo}</td><td style="white-space:normal;">${s.name}</td>`;
-        data.displayCols.forEach(col => { 
-            let cellData = s.displayMarks[col]; 
-            let val = cellData && cellData.value !== undefined ? cellData.value : "-"; 
-            if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) { val += ` (${cellData.actualSubjCode || cellData.actualSubj})`; } 
-            finalHtml += `<td>${val}</td>`; 
-        });
-        finalHtml += `<td>${s.total}</td><td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.rank}</td></tr>`;
-    });
-    
-    finalHtml += `</tbody></table></body></html>`;
-    printWindow.document.write(finalHtml);
-    
-    let d = new Date();
-    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-    let safeClassName = (repClass || 'Report').replace(/\s+/g, '_');
-    printWindow.document.title = `MasterOnly_${safeClassName}_${data.year}_${data.term}_${timeString}`;
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 500);
-}
+    const data = window.currentReportData;
+    if (!data || data.type !== 'Class') return alert("Please generate the Class Master Report first.");
+    
+    const schoolName = "R/Gankanda Central College";
+    
+    // ✅ Mobile-safe hidden iframe
+    let oldIframe = document.getElementById('mobilePrintFrame');
+    if (oldIframe) oldIframe.remove();
+    let iframe = document.createElement('iframe');
+    iframe.id = 'mobilePrintFrame';
+    iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;border:none;';
+    document.body.appendChild(iframe);
+    const printWindow = iframe.contentWindow;
+    
+    let repClass = data.cls || "";
+    let repTeacher = data.ctName || "..........................";
+    const isLandscape = data.displayCols.length > 8;
+    const orientation = isLandscape ? 'landscape' : 'portrait';
+    const studentsPerPage = isLandscape ? 30 : 40;
+    
+    let reportStyles = `<style>
+    @page { size: A4 ${orientation}; margin: 10mm; }
+    * { color: #000 !important; font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { margin: 0; text-transform: capitalize; }
+    .page-break { page-break-after: always; }
+    .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+    .header-container h1 { margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase; }
+    .header-container h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: bold; }
+    .info-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; font-size: 11px; }
+    .official-table { width: 100%; border-collapse: collapse; table-layout: auto; }
+    .official-table th, .official-table td { border: 1px solid #000 !important; padding: 5px; text-align: left !important; font-size: 10px; font-weight: bold; }
+    .official-table th { background: transparent !important; border-bottom: 1.5px solid #000 !important; text-transform: uppercase; white-space: nowrap; }
+    .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: 4px; font-size: 10px; white-space: nowrap; }
+    .signature-section { display: flex; justify-content: space-between; margin-top: 30px; page-break-inside: avoid; }
+    .sig-box { text-align: center; width: 30%; font-weight: bold; font-size: 11px; }
+    .sig-line { border-top: 1px dashed #000; margin-bottom: 5px; width: 80%; margin: 0 auto; }
+    </style>`;
+    
+    let finalHtml = `<html><head><title>Class_Master_Only</title>${reportStyles}</head><body>`;
+    
+    for (let i = 0; i < data.students.length; i += studentsPerPage) {
+        const studentChunk = data.students.slice(i, i + studentsPerPage);
+        const isLastPage = (i + studentsPerPage) >= data.students.length;
+        
+        finalHtml += `<div class="${!isLastPage ? 'page-break' : ''}">
+            <div class="header-container">
+                <div style="width:70px;height:70px;">${SYS_LOGO_SVG}</div>
+                <div style="text-align:left;">
+                    <h1>${schoolName}</h1>
+                    <h2>Class Master Sheet - ${data.year} ${data.term}</h2>
+                </div>
+            </div>
+            <div class="info-row">
+                <span>Class: ${sanitizeText(repClass)}</span>
+                <span>Class Teacher: ${repTeacher}</span>
+            </div>
+            <table class="official-table"><thead><tr>
+                <th style="width:1%;">Adm No</th>
+                <th style="width:99%;">Student Name</th>`;
+        
+        data.displayCols.forEach(c => finalHtml += `<th><span class="vertical-text">${c}</span></th>`);
+        finalHtml += `<th><span class="vertical-text">Total</span></th>
+            <th><span class="vertical-text">${data.isALevel ? 'Z-Score' : 'Average'}</span></th>
+            <th><span class="vertical-text">Rank</span></th>
+            </tr></thead><tbody>`;
+        
+        studentChunk.forEach(s => {
+            finalHtml += `<tr><td>${s.admNo}</td><td style="white-space:normal;">${s.name}</td>`;
+            data.displayCols.forEach(col => {
+                let cellData = s.displayMarks[col];
+                let val = cellData && cellData.value !== undefined ? cellData.value : "-";
+                if(cellData && cellData.actualSubj && val !== "-" && val !== "AB" && cellData.actualSubj !== col) {
+                    val += ` (${cellData.actualSubjCode || cellData.actualSubj})`;
+                }
+                finalHtml += `<td>${val}</td>`;
+            });
+            finalHtml += `<td>${s.total}</td><td>${data.isALevel ? s.overallZ : s.average}</td><td>${s.rank}</td></tr>`;
+        });
+        
+        finalHtml += `</tbody></table>`;
+        
+        if(isLastPage) {
+            finalHtml += `<div class="signature-section">
+                <div class="sig-box"><div class="sig-line"></div>Class Teacher</div>
+                <div class="sig-box"><div class="sig-line"></div>Principal</div>
+            </div>`;
+        }
+        finalHtml += `</div>`;
+    }
+    finalHtml += `</body></html>`;
+    
+    printWindow.document.write(finalHtml);
+    printWindow.document.close();
+    
+    // ✅ PDF filename සහ print trigger
+    let d = new Date();
+    let timeStr = `${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+    let fileName = `MasterOnly_${(repClass||'Report').replace(/\s+/g,'_')}_${data.year}_${data.term}_${timeStr}`;
+    
+    let originalTitle = document.title;
+    document.title = fileName;
+    
+    setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        setTimeout(() => { document.title = originalTitle; }, 2000);
+    }, 500);
+};
 
 // ==========================================
 // CSV EXPORT FUNCTION
