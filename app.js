@@ -1105,12 +1105,11 @@
 
   // --- අලුතින් එක් කළ Delete Functions ---
   
-  // තනි සිසුවෙකුගේ ලකුණු මකා දැමීම
-  window.deleteSingleMark = async function(admNo) {
+  // තනි සිසුවෙකුගේ ලකුණු මකා දැමීම (Optimized)
+window.deleteSingleMark = async function(admNo) {
     let yr = document.getElementById('yearSelect').value;
     let trm = document.getElementById('termSelect').value;
     let subKey = document.getElementById('marksSubjectSelect').value;
-    
     let actualSubKey = subKey;
     let isBucket = subKey.startsWith('BUCKET:::');
     
@@ -1119,98 +1118,68 @@
         actualSubKey = sel ? sel.value : "";
         if (!actualSubKey) return alert("No subject assigned to delete.");
     }
-    
     if(!confirm(`Are you sure you want to DELETE the mark for student ${admNo}?`)) return;
     
     try {
-        // ✅ Firebase DELETE request - නිවැරදි path එක
-        let deletePath = `marks/${yr}/${trm}/${admNo}/${actualSubKey}`;
-        await apiCall(deletePath, 'DELETE');
+        await apiCall(`marks/${yr}/${trm}/${admNo}/${actualSubKey}`, 'DELETE');
         
-        // ✅ UI එක වහාම update කිරීම
+        // ✅ Memory Cache Clear කිරීම (වේගවත් Sync සඳහා)
+        let cacheKey = `elite_cache_marks_${yr}_${trm.replace(/\s+/g, '_')}`;
+        if (memoryCache[cacheKey]) delete memoryCache[cacheKey];
+        
+        // ✅ UI එක වහාම යාවත්කාලීන කිරීම
         let inputEl = document.getElementById(`m_${admNo}`);
-        if(inputEl) {
-            inputEl.value = "";
-            inputEl.style.borderColor = "#cbd5e1";
-            inputEl.style.backgroundColor = "#ffffff";
-        }
-        if(isBucket) {
-            let sel = document.getElementById(`bsel_${admNo}`);
-            if(sel) sel.value = "";
-        }
+        if(inputEl) { inputEl.value = ""; inputEl.style.borderColor = "#cbd5e1"; }
+        if(isBucket) { let sel = document.getElementById(`bsel_${admNo}`); if(sel) sel.value = ""; }
         
-        // ✅ Success message
         let msg = document.getElementById('saveMsg');
-        if(msg) {
-            msg.style.color = "var(--success)";
-            msg.innerText = "Mark deleted successfully!";
-            setTimeout(() => { msg.innerText = ""; }, 2000);
-        }
+        if(msg) { msg.style.color = "var(--success)"; msg.innerText = "Mark deleted!"; setTimeout(()=>msg.innerText="", 2000); }
     } catch(e) {
         console.error("Delete error:", e);
         alert("Error deleting mark: " + e.message);
     }
-}
+};
 
-  // මුළු පංතියේම අදාළ විෂයයේ ලකුණු එකවර මකා දැමීම
-  window.deleteAllMarksForSubject = async function() {
+  // මුළු පංතියේම අදාළ විෂයයේ ලකුණු එකවර මකා දැමීම (Optimized)
+window.deleteAllMarksForSubject = async function() {
     let yr = document.getElementById('yearSelect').value;
     let trm = document.getElementById('termSelect').value;
     let cls = document.getElementById('marksClassSelect').value;
     let subKey = document.getElementById('marksSubjectSelect').value;
-    
     if(!confirm(`Are you sure you want to DELETE ALL marks for this subject in ${cls}?`)) return;
     
     let isBucket = subKey.startsWith('BUCKET:::');
     let actualBucketName = isBucket ? subKey.split(':::')[1] : null;
-    let bucketSubjectsKeys = isBucket ? 
-        Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName) : [];
-    
+    let bucketSubjectsKeys = isBucket ? Object.keys(allSubjectsData).filter(k => allSubjectsData[k].basketName === actualBucketName) : [];
     let inputs = document.getElementsByClassName('mark-input');
     let updates = {};
     
-    for(let i=0, len=inputs.length; i<len; i++) {
+    for(let i=0; i<inputs.length; i++) {
         let admNo = inputs[i].id.split('_')[1];
         if(isBucket) {
-            // ✅ Bucket: සියලුම subjects null කරන්න
-            bucketSubjectsKeys.forEach(k => { 
-                updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; 
-            });
+            bucketSubjectsKeys.forEach(k => { updates[`marks/${yr}/${trm}/${admNo}/${k}`] = null; });
         } else {
-            // ✅ Single subject: එම subject පමණක් null කරන්න
             updates[`marks/${yr}/${trm}/${admNo}/${subKey}`] = null;
         }
     }
     
     let msg = document.getElementById('saveMsg');
-    if(msg) {
-        msg.style.color = "var(--danger)";
-        msg.innerText = "Deleting all marks...";
-    }
+    if(msg) { msg.style.color = "var(--danger)"; msg.innerText = "Deleting all marks..."; }
     
     try {
-        // ✅ PATCH request with null values = Firebase එකෙන් delete වේ
         await apiCall('', 'PATCH', updates);
         
-        if(msg) {
-            msg.style.color = "var(--success)";
-            msg.innerText = "All marks deleted! Reloading...";
-        }
+        // ✅ Cache Clear & Table Reload
+        let cacheKey = `elite_cache_marks_${yr}_${trm.replace(/\s+/g, '_')}`;
+        if (memoryCache[cacheKey]) delete memoryCache[cacheKey];
         
-        // ✅ UI එක නැවත ලෝඩ් කිරීම
-        setTimeout(() => {
-            if(msg) msg.innerText = "";
-            loadStudentsToMark(); // ✅ Table එක නැවත generate කරයි
-        }, 1500);
-        
+        if(msg) { msg.style.color = "var(--success)"; msg.innerText = "All marks deleted! Reloading..."; }
+        setTimeout(()=> { if(msg) msg.innerText = ""; loadStudentsToMark(); }, 800);
     } catch(e) {
         console.error("Bulk delete error:", e);
-        if(msg) {
-            msg.style.color = "var(--danger)";
-            msg.innerText = "Error: " + e.message;
-        }
+        if(msg) { msg.style.color = "var(--danger)"; msg.innerText = "Error: " + e.message; }
     }
-}
+};
 
   // --- Absent වූ විට Grade එක "-" ලෙස දැක්වීමට අදාළ වෙනස ---
   function getGr(m) { 
