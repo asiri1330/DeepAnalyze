@@ -62,17 +62,43 @@
     .eye-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8; transition: color 0.2s; }
     .eye-icon:hover { color: var(--primary); }
 
-    button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--primary); color: #fff; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 14px; transition: all 0.2s ease; width: auto; text-transform: capitalize; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);}
-    button:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3); }
-    .btn-full { width: 100%; }
-    .btn-success { background-color: var(--success); box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); } .btn-success:hover { background-color: var(--success-hover); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); }
-    .btn-warning { background-color: var(--warning); color: #fff; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); } .btn-warning:hover { background-color: var(--warning-hover); }
-    .btn-danger { background-color: var(--danger); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); } .btn-danger:hover { background-color: var(--danger-hover); }
-    .btn-info { background-color: var(--info); box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); } .btn-info:hover { background-color: var(--info-hover); }
-    .btn-action { background-color: #fff; color: var(--text-main); border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .btn-action:hover { background-color: #f8fafc; border-color:#94a3b8; transform: translateY(-1px); }
-    .btn-small { padding: 6px 12px; font-size: 13px; border-radius: 8px; font-weight: 600; }
-    .btn-back { background: #f8fafc; color: var(--text-muted); border: 1px solid #cbd5e1; gap: 6px; margin-bottom: 20px; padding: 8px 16px; font-weight: 700; box-shadow:none;}
-    .btn-back:hover { background: #e2e8f0; color: var(--text-main); border-color:#94a3b8; transform:translateX(-3px); }
+   /* ✅ සුමට බොත්තම් ප්‍රතිචාර (Smooth Buttons) */
+button, .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 700; font-size: 14px;
+  text-transform: capitalize; width: auto;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+  -webkit-tap-highlight-color: transparent;
+  position: relative; overflow: hidden;
+}
+button:active, .btn:active { transform: scale(0.97); transition-duration: 0.1s; }
+button:focus-visible, .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* වර්ණ අනුව බොත්තම් */
+button, .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+button:hover, .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); }
+
+.btn-success { background: var(--success); color: #fff; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
+.btn-success:hover { background: var(--success-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
+
+.btn-warning { background: var(--warning); color: #fff; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); }
+.btn-warning:hover { background: var(--warning-hover); transform: translateY(-2px); }
+
+.btn-danger { background: var(--danger); color: #fff; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
+.btn-danger:hover { background: var(--danger-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3); }
+
+.btn-info { background: var(--info); color: #fff; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); }
+.btn-info:hover { background: var(--info-hover); transform: translateY(-2px); }
+
+.btn-action { background: #fff; color: var(--text-main); border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.btn-action:hover { background: #f8fafc; border-color: #94a3b8; }
+
+.btn-small { padding: 6px 12px; font-size: 13px; border-radius: 8px; font-weight: 600; }
+.btn-full { width: 100%; }
+.btn-back { background: #f8fafc; color: var(--text-muted); border: 1px solid #cbd5e1; gap: 6px; margin-bottom: 20px; padding: 8px 16px; font-weight: 700; box-shadow: none; }
+.btn-back:hover { background: #e2e8f0; color: var(--text-main); border-color: #94a3b8; transform: translateX(-3px); }
 
     .table-container { border: 1px solid #e2e8f0; border-radius: 12px; overflow-x: auto; max-height: 500px; margin-top: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-overflow-scrolling: touch; width: 100%;}
     .ui-data-table { min-width: max-content; width: 100%; border-collapse: collapse; font-size: 13px; background-color: #fff; }
@@ -275,4 +301,15 @@
   .pdf-mode .no-print {
     display: none !important;
   }
-  
+ /* ✅ ජංගම දුරකථන සඳහා ස්පර්ශ ප්‍රතිචාර (Mobile Touch Fix) */
+@media (hover: none) and (pointer: coarse) {
+  button, .btn, .btn-action { min-height: 44px; padding: 12px 16px; }
+  button:hover, .btn:hover { transform: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  button:active, .btn:active { transform: scale(0.96); background-color: rgba(0,0,0,0.06); }
+}
+
+/* ✅ බ්‍රවුසරය වේගවත් කිරීම සඳහා GPU ඉඟි */
+.ui-data-table, .table-container, .content-box, .report-card {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+} 
