@@ -1,402 +1,355 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="si">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>DeepAnlyzeLite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>R/Gankanda Central College | Mark Analyzer Pro</title>
   
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
-  
-  <script src="app.js"></script>
-
+  <!-- External Resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loader-overlay">
-      <div class="spinner"></div>
-      <p id="loader-text" style="margin-top: 15px; font-weight: bold; color: #333;">Loading data...</p>
+  <!-- Loader -->
+  <div id="loader-overlay" role="alert" aria-live="assertive">
+    <div class="spinner"></div>
+    <p style="margin-top:15px; font-weight:600; color:#0f172a;">Loading data...</p>
   </div>
 
-<datalist id="classList"></datalist>
-
-<div class="auth-container" id="loginBox">
-  <div class="auth-box">
-      <div style="text-align:center; margin-bottom:30px;">
-        <div style="width: 80px; height: 80px; margin: 0 auto 15px auto;">
-            <img src="School-Logo-GCC.png" alt="Banner Logo" style="width:100%; height:100%; object-fit:contain;">
-        </div>
-        <h2 style="margin:10px 0 5px 0; color:var(--text-main); font-weight:900;">Marks Management Base</h2>
-        <p style="margin:0; font-size:14px; font-weight:600; color:var(--text-muted);">Sign in to your account</p>
+  <!-- Auth / Login Screen -->
+  <div id="loginBox" class="auth-container">
+    <div class="auth-box" role="form" aria-labelledby="loginTitle">
+      <div style="text-align:center; margin-bottom:25px;">
+        <h2 id="loginTitle" style="margin:0 0 5px 0; font-size:24px; font-weight:800;">Mark Analyzer Pro</h2>
+        <p style="margin:0; color:#64748b; font-weight:500;">Sign in to your account</p>
       </div>
-      <label>NIC:</label>
-      <div style="position:relative;"><span class="material-symbols-outlined" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:20px;">badge</span><input type="text" id="nicInput" class="uppercase-input" placeholder="Enter your ID" style="padding-left:42px;"></div>
-      <label>Password:</label>
-      <div class="pwd-wrapper"><span class="material-symbols-outlined" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:20px;">lock</span><input type="password" id="passInput" placeholder="Enter Password" style="padding-left:42px;"><span class="eye-icon" onclick="togglePwd('passInput', this)"><span class="material-symbols-outlined icon-small">visibility</span></span></div>
-      <button onclick="login()" id="loginBtn" class="btn-full" style="margin-top:15px; font-size:16px; padding:14px;">Login</button>
-      <div style="text-align:center; margin-top:20px;"><button class="btn-action btn-small" style="border:none; background:transparent; color:var(--primary); font-weight:700; box-shadow:none;" onclick="alert('Contact System Admin to reset password.')">Forgot Password?</button></div>
-      <div id="loginMsg" style="color:var(--danger); font-size: 14px; text-align:center; margin-top:15px; font-weight:700;"></div>
+      <div id="error-message-box" style="display:none; margin-bottom:10px;"></div>
+      
+      <label for="nicInput">NIC / Employee ID</label>
+      <div class="pwd-wrapper" style="position:relative;">
+        <input type="text" id="nicInput" placeholder="851234567V" autocomplete="username" required>
+        <span class="material-symbols-outlined" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#94a3b8;">badge</span>
+      </div>
+
+      <label for="passInput">Password</label>
+      <div class="pwd-wrapper" style="position:relative;">
+        <input type="password" id="passInput" placeholder="Enter password" autocomplete="current-password" required>
+        <span class="eye-icon" onclick="togglePwd('passInput', this)">visibility</span>
+      </div>
+
+      <button onclick="login()" id="loginBtn" style="width:100%; margin-top:15px;">Login</button>
+      <p id="loginMsg" style="margin-top:15px; text-align:center; font-size:13px; color:#ef4444; min-height:18px;"></p>
+      
+      <div style="text-align:center; margin-top:20px;">
+        <a href="#" style="font-size:13px; color:#3b82f6; text-decoration:none; font-weight:600;">Forgot Password?</a>
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="auth-container" id="setupBox" style="display:none;">
-  <div class="auth-box">
-      <h2 style="text-align:center; margin-top:0; font-weight:900; color:var(--text-main);">First Login Setup</h2>
-      <p style="text-align:center; color:var(--text-muted); font-size:14px; font-weight:600; margin-bottom:25px;">Please create a secure new password.</p>
-      <label>New Password:</label>
-      <div class="pwd-wrapper">
-          <input type="password" id="newPass1" placeholder="New Password">
-          <span class="eye-icon" onclick="togglePwd('newPass1', this)"><span class="material-symbols-outlined icon-small">visibility</span></span>
+  <!-- First Time Setup -->
+  <div id="setupBox" class="auth-container" style="display:none;">
+    <div class="auth-box">
+      <div style="text-align:center; margin-bottom:25px;">
+        <h2 style="margin:0 0 5px 0; font-size:22px; font-weight:800;">First Login Setup</h2>
+        <p style="margin:0; color:#64748b;">Please create a secure new password.</p>
       </div>
-      <label>Confirm Password:</label>
-      <div class="pwd-wrapper">
-          <input type="password" id="newPass2" placeholder="Confirm Password">
-          <span class="eye-icon" onclick="togglePwd('newPass2', this)"><span class="material-symbols-outlined icon-small">visibility</span></span>
-      </div>
-      <button class="btn-success btn-full" onclick="completeFirstSetup()" style="margin-top:20px; font-size:16px; padding:14px;">Save & Continue</button>
-      <div id="setupMsg" style="color:var(--danger); text-align:center; font-weight:700; margin-top:15px;"></div>
+      <label>New Password</label>
+      <input type="password" id="newPass1" autocomplete="new-password">
+      <label>Confirm Password</label>
+      <input type="password" id="newPass2" autocomplete="new-password">
+      <button onclick="completeFirstSetup()" style="width:100%; margin-top:15px;">Save & Continue</button>
+      <p id="setupMsg" style="margin-top:10px; text-align:center; font-size:13px; min-height:18px;"></p>
+    </div>
   </div>
-</div>
 
-<div id="appLayout">
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div style="width: 32px; height: 32px; flex-shrink: 0;">
-                 <img src="School-Logo-GCC.png" alt="Banner Logo" style="width:100%; height:100%; object-fit:contain;">
-            </div>
-            <span style="font-size: 15px; white-space: nowrap;">Mark Analyzer Pro</span>
-        </div>
-        <ul class="nav-links">
-            <li onclick="switchSection('secDashboard')" id="nav_secDashboard" class="active"><span class="material-symbols-outlined icon">home</span> Home</li>
-            <li onclick="switchSection('secTeachers')" id="nav_secTeachers"><span class="material-symbols-outlined icon">group</span> Teacher</li>
-            <li onclick="switchSection('secClasses')" id="nav_secClasses"><span class="material-symbols-outlined icon">meeting_room</span> Class</li>
-            <li onclick="switchSection('secSubjects')" id="nav_secSubjects"><span class="material-symbols-outlined icon">menu_book</span> Subject</li>
-            <li onclick="switchSection('secStudents')" id="nav_secStudents"><span class="material-symbols-outlined icon">face</span> Student</li>
-            <li onclick="switchSection('secMarks')" id="nav_secMarks"><span class="material-symbols-outlined icon">edit_document</span> Mark Entry</li>
-            <li onclick="switchSection('secProgress')" id="nav_secProgress"><span class="material-symbols-outlined icon">trending_up</span> Progress</li>
-            <li onclick="switchSection('secReports')" id="nav_secReports"><span class="material-symbols-outlined icon">folder_open</span> Reports</li>
-        </ul>
-        <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-            <button class="btn-action btn-full" onclick="logout()" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border:none; box-shadow:none;"><span class="material-symbols-outlined icon-small">logout</span> Logout</button>
-        </div>
+  <!-- Main App Layout -->
+  <div id="appLayout" style="display:none;">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar" aria-label="Main Navigation">
+      <div class="sidebar-brand">
+        <span class="material-symbols-outlined">analytics</span>
+        <span>Mark Analyzer Pro</span>
+      </div>
+      <ul class="nav-links">
+        <li id="nav_secDashboard" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon">home</span> Home</li>
+        <li id="nav_secTeachers" onclick="switchSection('secTeachers')"><span class="material-symbols-outlined icon">group</span> Teacher</li>
+        <li id="nav_secClasses" onclick="switchSection('secClasses')"><span class="material-symbols-outlined icon">meeting_room</span> Class</li>
+        <li id="nav_secSubjects" onclick="switchSection('secSubjects')"><span class="material-symbols-outlined icon">menu_book</span> Subject</li>
+        <li id="nav_secStudents" onclick="switchSection('secStudents')"><span class="material-symbols-outlined icon">face</span> Student</li>
+        <li id="nav_secMarks" onclick="switchSection('secMarks')"><span class="material-symbols-outlined icon">edit_document</span> Mark Entry</li>
+        <li id="nav_secProgress" onclick="switchSection('secProgress')"><span class="material-symbols-outlined icon">trending_up</span> Progress</li>
+        <li id="nav_secReports" onclick="switchSection('secReports')"><span class="material-symbols-outlined icon">folder_open</span> Reports</li>
+        <li onclick="logout()"><span class="material-symbols-outlined icon">logout</span> Logout</li>
+      </ul>
     </nav>
 
+    <!-- Main Content -->
     <main class="main-content">
-        <header class="topbar">
-            <div style="display:flex; align-items:center; gap:20px;">
-                <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')"><span class="material-symbols-outlined">menu</span></button>
-                <h2 id="pageTitle">Home</h2>
-            </div>
-            <div class="user-profile" id="topbarUser">Loading...</div>
-        </header>
-
-        <div class="scroll-area">
-            <div id="error-message-box" style="display: none; text-align: center; margin-bottom: 20px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);"></div>
-            
-            <div id="secDashboard" class="section-box" style="display:block;">
-                <div class="dash-banner">
-                    <div class="dash-banner-icon" style="overflow: hidden; padding: 5px; background: transparent; border: none;">
-                        <img src="School-Logo-GCC.png" alt="Banner Logo" style="width:100%; height:100%; object-fit:contain;">
-                    </div>  
-                    <div><h1>R/Gankanda Central College</h1><p id="dashWelcomeText">Welcome back • Please select an option from the menu.</p></div>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat-card"><div class="stat-icon" style="background:#10b981;"><span class="material-symbols-outlined">group</span></div><div class="stat-info"><h3 id="statTeachers">0</h3><p>Total Teachers</p></div></div>
-                    <div class="stat-card"><div class="stat-icon" style="background:#3b82f6;"><span class="material-symbols-outlined">face</span></div><div class="stat-info"><h3 id="statStudents">0</h3><p>Total Students</p></div></div>
-                    <div class="stat-card"><div class="stat-icon" style="background:#f59e0b;"><span class="material-symbols-outlined">meeting_room</span></div><div class="stat-info"><h3 id="statClasses">0</h3><p>Active Classes</p></div></div>
-                    <div class="stat-card"><div class="stat-icon" style="background:#8b5cf6;"><span class="material-symbols-outlined">menu_book</span></div><div class="stat-info"><h3 id="statSubjects">0</h3><p>Total Subjects</p></div></div>
-                </div>
-            </div>
-
-            <div id="secClasses" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                <div class="content-box">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="section-title" style="margin-bottom:0; border:none;"><span class="material-symbols-outlined">meeting_room</span> Classes</h3>
-                        <button class="btn-success" id="btnAddClass" onclick="showAddClassForm()"><span class="material-symbols-outlined icon-small">add</span> Add Class</button>
-                    </div>
-                    
-                    <div id="addClassForm" style="display:none; background:#f8fafc; padding:25px; border-radius:12px; border:1px solid #e2e8f0; margin:20px 0; animation: fadeIn 0.3s ease;">
-                       <div class="flex-row" style="align-items:flex-end;">
-                           <div><label style="margin-top:0;">Class Name:</label><input type="text" id="cName" class="input-modern uppercase-input" placeholder="e.g., 12-A, 10-B"></div>
-                           <div><label style="margin-top:0;">Grade / Stream:</label><select id="cGrade" class="input-modern"><option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 9">Grade 9</option><option value="Grade 10">Grade 10</option><option value="Grade 11">Grade 11</option><option value="Grade 12 ART">Grade 12 ART</option><option value="Grade 12 BIOLOGY">Grade 12 BIOLOGY</option><option value="Grade 12 MATHS">Grade 12 MATHS</option><option value="Grade 12 COMMERCE">Grade 12 COMMERCE</option><option value="Grade 12 TECHNOLOGY">Grade 12 TECHNOLOGY</option><option value="Grade 13 ART">Grade 13 ART</option><option value="Grade 13 BIOLOGY">Grade 13 BIOLOGY</option><option value="Grade 13 MATHS">Grade 13 MATHS</option><option value="Grade 13 COMMERCE">Grade 13 COMMERCE</option><option value="Grade 13 TECHNOLOGY">Grade 13 TECHNOLOGY</option></select></div>
-                           <div style="flex:2;"><label style="margin-top:0;">Class Teacher:</label><select id="cTeacher" class="input-modern"></select></div>
-                       </div>
-                       <div style="margin-top:20px; display:flex; gap:12px;">
-                           <button class="btn-success" id="btnSaveClass" onclick="saveClass()"><span class="material-symbols-outlined icon-small">save</span> Save</button>
-                           <button class="btn-action" id="btnCancelClass" onclick="resetClassForm()">Cancel</button>
-                       </div>
-                       <div id="adminMsgCls" style="font-weight:700; margin-top:10px; font-size:13px;"></div>
-                    </div>
-
-                    <input type="text" id="filterClassInput" class="input-modern" placeholder="Find Class..." onkeyup="filterClasses()" style="max-width:320px; margin-top:15px;">
-                    <div class="table-container">
-                      <table class="ui-data-table" id="classesTable">
-                        <thead><tr><th>Class Name</th><th>Grade / Stream</th><th>Class Teacher</th><th style="width:120px; text-align:center;">Actions</th></tr></thead>
-                        <tbody id="classesTbody"></tbody>
-                      </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="secSubjects" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                <div class="content-box">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="section-title" style="margin-bottom:0; border:none;"><span class="material-symbols-outlined">menu_book</span> Subjects</h3>
-                        <button class="btn-success" id="btnAddSubject" onclick="showAddSubjectForm()"><span class="material-symbols-outlined icon-small">add</span> Add Subject</button>
-                    </div>
-                    
-                    <div id="addSubjectForm" style="display:none; background:#f8fafc; padding:25px; border-radius:12px; border:1px solid #e2e8f0; margin:20px 0; animation: fadeIn 0.3s ease;">
-                       <div class="flex-row" style="align-items:flex-end;">
-                           <div style="flex:2;"><label style="margin-top:0;">Subject Name:</label><input type="text" id="subName" class="input-modern" placeholder="e.g., Mathematics"></div>
-                           <div><label style="margin-top:0;">Subject Code:</label><input type="text" id="subCode" class="input-modern uppercase-input" placeholder="e.g., MATH"></div>
-                       </div>
-                       <div class="flex-row" style="align-items:flex-end; margin-top:15px;">
-                           <div style="flex:1;">
-                               <label style="margin-top:0;">Type:</label>
-                               <select id="subGradeType" class="input-modern" onchange="toggleSubjectBasket()" style="margin-bottom:0;">
-                                    <option value="ol_main">O/L Main Subject</option>
-                                    <option value="ol_basket">O/L Basket Subject</option>
-                                    <option value="al_main">A/L Main Subject</option>
-                                    <option value="al_basket">A/L Basket Subject</option>
-                                    <option value="al_common">A/L General Subject</option>
-                                </select>
-                           </div>
-                           <div style="flex:1; display:none;" id="subBasketDiv">
-                               <label style="margin-top:0;">Category / Bucket Name (Optional):</label>
-                               <input type="text" id="subBasketName" class="input-modern" placeholder="e.g., Basket 1, ART - Basket 1" style="margin-bottom:0;">
-                           </div>
-                           <div style="flex:0 0 auto; display:flex; gap:12px;">
-                               <button class="btn-success" id="btnSaveSubject" onclick="saveSubject()"><span class="material-symbols-outlined icon-small">save</span> Save</button>
-                               <button class="btn-action" id="btnCancelSubject" onclick="resetSubjectForm()">Cancel</button>
-                           </div>
-                       </div>
-                       <div id="adminMsgSub" style="font-weight:700; margin-top:10px; font-size:13px;"></div>
-                    </div>
-
-                    <input type="text" id="filterSubject" class="input-modern" placeholder="Find Subject..." onkeyup="filterSubjects()" style="max-width:320px; margin-bottom:15px;">
-                    <div class="table-container">
-                      <table class="ui-data-table" id="subjectsTable">
-                        <thead><tr><th>Name</th><th>Code</th><th>Type</th><th style="width:120px; text-align:center;">Actions</th></tr></thead>
-                        <tbody id="subjectsTbody"></tbody>
-                      </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="secTeachers" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                <div class="content-box" id="teacherAddBox">
-                    <h3 class="section-title"><span class="material-symbols-outlined">group_add</span> Teachers</h3>
-                    <div class="flex-row">
-                        <div><label>Teacher Number:</label><input type="text" id="tEmpNo" class="input-modern uppercase-input" placeholder="e.g., T001" oninput="checkTeacherEmpNo()"><div id="tEmpNoWarning" class="val-warning">Number is already used!</div></div>
-                        <div><label>NIC:</label><input type="text" id="tNIC" class="input-modern uppercase-input" placeholder="e.g., 850000000V" oninput="checkTeacherNIC()"><div id="tNICWarning" class="val-warning">ID is already used!</div></div>
-                    </div>
-                    <div class="flex-row">
-                        <div style="flex:1;"><label>Full Name:</label><input type="text" id="tName" class="input-modern" placeholder="Full Name"></div>
-                    </div>
-                    <div class="flex-row" style="align-items: center; margin-top: 10px;">
-                        <div>
-                            <label style="margin-top:0;">Designation:</label>
-                            <select id="tRole" class="input-modern" style="margin-bottom:0;">
-                                <option>Principal</option>
-                                <option>Vice Principal</option>
-                                <option>Assistant Principal</option>
-                                <option>Sectional Head</option>
-                                <option>Class Teacher</option>
-                                <option>Assistant Class Teacher</option>
-                                <option selected>Teacher</option>
-                            </select>
-                        </div>
-                        <div style="padding-top: 8px;"><label style="display:inline-flex; align-items:center; cursor:pointer; margin:0; font-size: 14px; color: var(--text-main); font-weight: 700;"><input type="checkbox" id="tIsAdmin" style="width:20px; height:20px; margin:0 10px 0 0; accent-color:var(--primary);"> Make Admin</label></div>
-                    </div>
-                    <div style="margin-top:25px; display:flex; gap:12px;"><button class="btn-success" id="btnSaveTeacher" onclick="saveTeacher()"><span class="material-symbols-outlined icon-small">save</span> Save</button><button class="btn-action" id="btnCancelTeacher" onclick="resetTeacherForm()" style="display:none;">Cancel</button></div>
-                    <div id="adminMsgT" style="font-weight:700; margin-top:10px; font-size:13px;"></div>
-                </div>
-                <div class="content-box" id="teacherImportBox">
-                    <div style="margin-bottom: 25px; padding: 18px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; box-shadow:0 2px 4px rgba(245, 158, 11, 0.05);">
-                        <h4 style="margin:0 0 12px 0; font-size:15px; color:#b45309; font-weight:800;">Firebase Security Sync</h4>
-                        <div style="display: flex; align-items: center;">
-                            <button class="btn-warning" onclick="bulkCreateAuthAccounts()">
-                                <span class="material-symbols-outlined icon-small">sync</span> Sync Auth
-                            </button>
-                            <span style="font-size:13px; color:var(--text-muted); font-weight:600; margin-left:12px;">(Run this after adding new teachers)</span>
-                        </div>
-                    </div>
-
-                    <h4 style="margin:0 0 15px 0; font-size:16px; font-weight:800; color:var(--text-main);">Bulk Import (Excel/CSV)</h4>
-                    <div class="flex-row" style="background:#f8fafc; padding:20px; border-radius:12px; border:2px dashed #cbd5e1; align-items:center;">
-                        <div style="flex:2;"><input type="file" id="tCsvFile" accept=".csv" class="input-modern" style="margin:0; background:#fff;"></div>
-                        <div style="flex:0 0 auto; display:flex; gap:12px;"><button class="btn-action" onclick="downloadTeacherTemplate()"><span class="material-symbols-outlined icon-small">download</span> Template</button><button class="btn-primary" onclick="importTeachersCSV()"><span class="material-symbols-outlined icon-small">upload</span> Upload</button></div>
-                    </div>
-                    <div id="tImportMsg" style="font-size:14px; font-weight:700; margin-top:10px;"></div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; margin-bottom: 15px;">
-                      <button id="btnRearrangeRange" class="btn-action" onclick="rearrangeTeacherRange()" style="background-color: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-outlined icon-small">format_list_numbered</span> Rearrange Range (Ex: 1-10)
-                    </button>
-                    </div>
-                    <input type="text" id="filterTeacher" class="input-modern" placeholder="Find Teacher..." onkeyup="filterTeachers()" style="margin-top:25px; max-width:320px;">
-                    <div class="table-container"><table class="ui-data-table"><thead><tr><th>No</th><th>NIC</th><th>Name</th><th>Job Level</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="teachersTbody"></tbody></table></div>
-                </div>
-            </div>
-
-            <div id="secStudents" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                
-                <div class="content-box" id="studentAddBox">
-                    <h3 class="section-title"><span class="material-symbols-outlined">person_add</span> Students</h3>
-                    <div class="flex-row">
-                        <div><label>Admission Number:</label><input type="text" id="sAdmNo" class="input-modern" placeholder="e.g., 1001" oninput="checkStudentAdmNo()"><div id="sAdmNoWarning" class="val-warning">Number is already used!</div></div>
-                    <div><label>Class:</label><select id="sClass" class="input-modern"></select></div>
-        
-                        <div class="form-group">
-                            <label for="sGender">Gender <span style="color:red;">*</span></label>
-                            <select id="sGender" name="gender" required class="input-modern">
-                                <option value="" disabled selected>Please select...</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
-                        <div><label>Contact No (Optional):</label><input type="text" id="sContact" class="input-modern" placeholder="e.g., 07XXXXXXXX"></div>
-                    </div>
-                    <label>Student Full Name:</label><input type="text" id="sName" class="input-modern" placeholder="Full Name">
-                    <div style="margin-top:20px; display:flex; gap:12px;"><button class="btn-success" id="btnSaveStudent" onclick="saveStudent()"><span class="material-symbols-outlined icon-small">save</span> Save</button><button class="btn-action" id="btnCancelStudent" onclick="resetStudentForm()" style="display:none;">Cancel</button></div>
-                    <div id="adminMsgS" style="font-weight:700; margin-top:10px; font-size:13px;"></div>
-                </div>
-                <div class="content-box" id="studentImportBox">
-                    <h4 style="margin:0 0 15px 0; font-size:16px; font-weight:800; color:var(--text-main);">Bulk Import (Excel/CSV)</h4>
-                    <div class="flex-row" style="background:#f8fafc; padding:20px; border-radius:12px; border:2px dashed #cbd5e1; align-items:center;">
-                        <div style="flex:2;"><input type="file" id="sCsvFile" accept=".csv" class="input-modern" style="margin:0; background:#fff;"></div>
-                        <div style="flex:0 0 auto; display:flex; gap:12px;"><button class="btn-action" onclick="downloadStudentTemplate()"><span class="material-symbols-outlined icon-small">download</span> Template</button><button class="btn-primary" onclick="importStudentsCSV()"><span class="material-symbols-outlined icon-small">upload</span> Upload</button></div>
-                    </div>
-                    <div id="sImportMsg" style="font-size:14px; font-weight:700; margin-top:10px;"></div>
-                    <div class="flex-row" style="margin-top:25px; margin-bottom:15px; align-items:flex-end;">
-                        <div>
-                            <label style="margin-top:0;">Select Class to Load Students:</label>
-                            <select id="studentClassFilter" class="input-modern" style="margin-bottom:0; min-width: 200px;" onchange="loadStudentsByClass()">
-                                <option value="">-- Select Class --</option>
-                            </select>
-                        </div>
-                        <div style="flex:2;">
-                            <label style="margin-top:0;">Find in Class:</label>
-                            <input type="text" id="filterStudentInput" class="input-modern" placeholder="Find Student..." onkeyup="filterStudents()" style="margin-bottom:0; max-width:320px;">
-                        </div>
-                    </div>
-                    <div class="table-container"><table class="ui-data-table"><thead><tr><th>Adm. No</th><th>Name</th><th>Class</th><th>Gender</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="studentsTbody"></tbody></table></div>
-                </div>
-            </div>
-
-            <div id="secMarks" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                <div class="content-box" style="padding: 30px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:25px;">
-                        <div><h3 style="margin:0; color:var(--text-main); font-size:22px; font-weight:900; display:flex; align-items:center; gap:10px;"><span class="material-symbols-outlined" style="color:var(--primary); font-size:28px;">edit_square</span> Enter Marks</h3></div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px;">
-                        <div><label style="margin-top:0;">Year</label><select id="yearSelect" class="dynamic-years input-modern"></select></div>
-                        <div><label style="margin-top:0;">Term</label><select id="termSelect" class="input-modern"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></div>
-                        <div><label style="margin-top:0;">Class</label><select id="marksClassSelect" class="input-modern"></select></div>
-                        <div><label style="margin-top:0;">Subject / Category</label><select id="marksSubjectSelect" class="input-modern"></select></div>
-                    </div>
-                    <button class="btn-primary" onclick="loadStudentsToMark()" style="width: 100%; padding: 14px; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);"><span class="material-symbols-outlined">view_list</span> Load Student List</button>
-                    <div id="studentListContainer" style="margin-top: 30px;"></div>
-                </div>
-            </div>
-
-            <div id="secProgress" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                <div class="content-box">
-                    <h3 class="section-title"><span class="material-symbols-outlined">trending_up</span> Student Progress</h3>
-                    <div class="flex-row" style="align-items:flex-end;">
-                        <div><label style="margin-top:0;">Class:</label><select id="progClassFilter" class="input-modern" style="margin-bottom:0;" onchange="updateProgressStudentList()"></select></div>
-                        <div style="position:relative; flex:2;"><label style="margin-top:0;">Student:</label><input type="text" id="progAdmNo" class="input-modern" placeholder="Select class first or search by Name / Number..." oninput="showStudentSuggestions(this.value)" onfocus="showStudentSuggestions(this.value)" autocomplete="off" style="margin-bottom:0;"><div id="progSuggestions" class="autocomplete-items" style="display:none;"></div></div>
-                        <div style="flex:0 0 auto;"><button class="btn-info" onclick="loadStudentProgress()"><span class="material-symbols-outlined icon-small">search</span> View Progress</button></div>
-                    </div>
-                </div>
-                <div id="progressProfile" class="content-box" style="display:none;">
-                    <h3 id="progStName" style="color:var(--primary); margin-top:0; border-bottom:2px solid #f1f5f9; padding-bottom:12px; font-size:20px; font-weight:800;"></h3>
-                    <div style="display:flex; flex-wrap:wrap; gap:25px; margin-top:25px;">
-                        <div style="flex:1; min-width:320px; height:320px;"><canvas id="progChartLatest"></canvas></div>
-                        <div style="flex:1; min-width:320px; height:320px;"><canvas id="progChartHistory"></canvas></div>
-                    </div>
-                    <div id="progTableContainer" style="margin-top: 35px; overflow-x: auto;"></div>
-                </div>
-            </div>
-
-            <div id="secReports" class="section-box">
-                <button class="btn-action btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined icon-small">arrow_back</span> Back</button>
-                
-                    <div id="reportSelectionView">
-                    <h3 style="margin-top:0; color:var(--text-main); font-size:20px; font-weight:800;">Main Reports</h3>
-                    <div class="main-reports-row">
-                        <div class="report-card" onclick="openReportConfig('class_master')"><span class="material-symbols-outlined">table_chart</span><h4>Class Master Sheet</h4><p>All marks for one class</p></div>
-                        <div class="report-card" onclick="openReportConfig('class_student_list')"><span class="material-symbols-outlined" style="color:#3b82f6;">group</span><h4>Class Student List</h4><p>Students list with details</p></div>
-                        <div class="report-card" onclick="openReportConfig('individual_cards')"><span class="material-symbols-outlined">contact_page</span><h4>Report Cards</h4><p>Cards for parents to see</p></div>
-                        <div class="report-card" onclick="openReportConfig('subject_list')"><span class="material-symbols-outlined">assignment</span><h4>Subject Marks</h4><p>Marks for just one subject</p></div>
-                        <div class="report-card" onclick="openReportConfig('top_achievers')"><span class="material-symbols-outlined">workspace_premium</span><h4>Top Students</h4><p>Best students in a class</p></div>
-                        <div class="report-card" onclick="openReportConfig('top_achievers_section')"><span class="material-symbols-outlined">social_leaderboard</span><h4>Grade Top Students</h4><p>Best students in grade</p></div>
-                        <div class="report-card" onclick="openReportConfig('class_analytics')"><span class="material-symbols-outlined">pie_chart</span><h4>Class Charts</h4><p>Charts to see performance</p></div>
-                    </div>
-                    
-                    <h3 style="margin-top:35px; color:var(--text-main); font-size:20px; font-weight:800; border-top:2px solid #e2e8f0; padding-top:25px;">Special Reports</h3>
-                    <div class="report-grid">
-                        <div class="report-card" style="border-color:#ef4444; background:#fef2f2;" onclick="openReportConfig('remedial_action_class')"><span class="material-symbols-outlined" style="color:#ef4444;">healing</span><h4>Remedial Report (Class)</h4><p>Weak students in class (< 50)</p></div>
-                        <div class="report-card" style="border-color:#ef4444; background:#fef2f2;" onclick="openReportConfig('remedial_action_grade')"><span class="material-symbols-outlined" style="color:#ef4444;">local_hospital</span><h4>Remedial Report (Grade)</h4><p>Weak students in grade (< 50)</p></div>
-                        <div class="report-card" style="border-color:#10b981; background:#f0fdf4;" onclick="openReportConfig('passes_summary_class')"><span class="material-symbols-outlined" style="color:#10b981;">checklist</span><h4>Pass Summary (Class)</h4><p>Students group by passes</p></div>
-                        <div class="report-card" style="border-color:#10b981; background:#f0fdf4;" onclick="openReportConfig('passes_summary_section')"><span class="material-symbols-outlined" style="color:#10b981;">format_list_numbered</span><h4>Pass Summary (Grade)</h4><p>Grade group by passes</p></div>
-                        <div class="report-card" style="border-color:#8b5cf6; background:#f5f3ff;" onclick="openReportConfig('prediction_report')"><span class="material-symbols-outlined" style="color:#8b5cf6;">online_prediction</span><h4>O/L AI Prediction</h4><p>Guess O/L marks (Grade 10/11)</p></div>
-                        <div class="report-card" style="border-color:#ec4899; background:#fdf2f8;" onclick="openReportConfig('al_prediction_report')"><span class="material-symbols-outlined" style="color:#ec4899;">psychology</span><h4>A/L AI Prediction</h4><p>Guess A/L marks and give advice</p></div>
-                    </div>
-                </div>
-
-                <div id="reportConfigPanel" class="content-box" style="display:none; position:relative;">
-                    <button class="btn-action btn-small" onclick="closeReportConfig()" style="position:absolute; top:20px; right:20px; padding:6px; border-radius:50%;"><span class="material-symbols-outlined icon-small">close</span></button>
-                    <h3 class="section-title" id="configTitle" style="border:none; margin-bottom:25px;">Report Settings</h3>
-                    <div id="configFields" class="flex-row">
-                        <div id="configYearDiv"><label style="margin-top:0;">Year:</label><select id="repYear" class="dynamic-years input-modern"></select></div>
-                        <div id="configTermDiv"><label style="margin-top:0;">Term:</label><select id="repTerm" class="input-modern"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></div>
-                        <div id="configClassDiv"><label style="margin-top:0;">Class:</label><select id="repClass" class="input-modern"></select></div>
-                        <div id="configGradeDiv" style="display:none;"><label style="margin-top:0;">Grade / Section:</label><select id="repGrade" class="input-modern"><option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 9">Grade 9</option><option value="Grade 10">Grade 10</option><option value="Grade 11">Grade 11</option><option value="Grade 12 ART">Grade 12 ART</option><option value="Grade 12 BIOLOGY">Grade 12 BIOLOGY</option><option value="Grade 12 MATHS">Grade 12 MATHS</option><option value="Grade 12 COMMERCE">Grade 12 COMMERCE</option><option value="Grade 12 TECHNOLOGY">Grade 12 TECHNOLOGY</option><option value="Grade 13 ART">Grade 13 ART</option><option value="Grade 13 BIOLOGY">Grade 13 BIOLOGY</option><option value="Grade 13 MATHS">Grade 13 MATHS</option><option value="Grade 13 COMMERCE">Grade 13 COMMERCE</option><option value="Grade 13 TECHNOLOGY">Grade 13 TECHNOLOGY</option></select></div>
-                        <div id="configSubjectDiv" style="display:none;"><label style="margin-top:0;">Subject:</label><select id="repSubject" class="input-modern"></select></div>
-                    </div>
-                    <button class="btn-primary" id="btnGenerateReport" style="margin-top:25px; width:100%; padding:14px; font-size:16px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);"><span class="material-symbols-outlined icon-small">play_circle</span> Generate Report</button>
-                </div>
-
-                <div id="reportOutputContainer" style="display:none; margin-top:25px;">
-                    <div id="analyticsPreview" style="display:none; flex-direction:column; gap:25px; margin-bottom:25px;">
-                        <div class="content-box" style="margin-bottom:0; flex:1; min-width:320px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:15px;">
-                                <h4 style="margin:0; font-size:16px; font-weight:800; color:var(--text-muted);">Pass Summary (A9, A8...)</h4>
-                                <button class="btn-action btn-small" onclick="toggleChartVisibility('pcChartCont', this)"><span class="material-symbols-outlined icon-small">visibility_off</span> Hide Chart</button>
-                            </div>
-                            <input type="text" id="passComboSearch" class="input-modern" placeholder="Search combination (e.g. A9)..." onkeyup="filterPassComboChart()" style="margin-bottom:15px;">
-                            <div id="pcChartCont" style="height:280px; margin-top:20px; transition:all 0.3s;"><canvas id="passComboChart"></canvas></div>
-                        </div>
-                        <div class="content-box" style="margin-bottom:0;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:15px;">
-                                <h4 style="margin:0; font-size:16px; font-weight:800; color:var(--text-muted);">Compare with First Rankers</h4>
-                                <button class="btn-action btn-small" onclick="toggleChartVisibility('cmpChartCont', this)"><span class="material-symbols-outlined icon-small">visibility_off</span> Hide Chart</button>
-                            </div>
-                            <input type="text" id="compareSearchInput" class="input-modern" placeholder="Search any student to compare..." oninput="filterCompareSuggestions(this.value)" onfocus="filterCompareSuggestions('')" style="margin-bottom:15px;">
-                            <div id="compareSuggestions" class="autocomplete-items" style="display:none; position:relative;"></div>
-                            <div id="cmpChartCont" style="height:320px; margin-top:20px; transition:all 0.3s;"><canvas id="compareChart"></canvas></div>
-                        </div>
-                    </div>
-                    <div id="reportHtmlContainer" class="content-box" style="overflow-x: auto;"></div>
-                </div>
-            </div>
-
+      <!-- Topbar -->
+      <header class="topbar">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Toggle Menu">menu</button>
+          <h2 id="pageTitle">Home</h2>
         </div>
+        <div id="topbarUser" class="user-profile">Loading...</div>
+      </header>
+
+      <!-- Scrollable Content Area -->
+      <div class="scroll-area">
+        <div id="error-message-box" style="display:none; margin-bottom:20px;"></div>
+
+        <!-- DASHBOARD -->
+        <section id="secDashboard" class="section-box" style="display:block;">
+          <div class="dash-banner">
+            <div class="dash-banner-icon"><span class="material-symbols-outlined" style="font-size:32px;">welcome</span></div>
+            <div>
+              <h1 id="dashWelcomeText">Welcome back • Please select an option from the menu.</h1>
+              <p>R/Gankanda Central College | Marks Management Base</p>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-icon" style="background:#3b82f6;"><span class="material-symbols-outlined">group</span></div><div class="stat-info"><h3 id="statTeachers">0</h3><p>Total Teachers</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#10b981;"><span class="material-symbols-outlined">face</span></div><div class="stat-info"><h3 id="statStudents">0</h3><p>Total Students</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#f59e0b;"><span class="material-symbols-outlined">meeting_room</span></div><div class="stat-info"><h3 id="statClasses">0</h3><p>Active Classes</p></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#8b5cf6;"><span class="material-symbols-outlined">menu_book</span></div><div class="stat-info"><h3 id="statSubjects">0</h3><p>Total Subjects</p></div></div>
+          </div>
+        </section>
+
+        <!-- TEACHERS -->
+        <section id="secTeachers" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Teacher Management</h3>
+          <div class="content-box" id="teacherAddBox">
+            <input type="text" id="tEmpNo" placeholder="Teacher Number" onkeyup="checkTeacherEmpNo()">
+            <span id="tEmpNoWarning" class="val-warning">Number is already used!</span>
+            <input type="text" id="tNIC" placeholder="NIC / ID" class="uppercase-input" onkeyup="checkTeacherNIC()">
+            <span id="tNICWarning" class="val-warning">ID is already used!</span>
+            <input type="text" id="tName" placeholder="Full Name">
+            <select id="tRole">
+              <option value="Teacher">Teacher</option>
+              <option value="Class Teacher">Class Teacher</option>
+              <option value="Assistant Class Teacher">Assistant Class Teacher</option>
+              <option value="Sectional Head">Sectional Head</option>
+              <option value="Assistant Principal">Assistant Principal</option>
+              <option value="Vice Principal">Vice Principal</option>
+              <option value="Principal">Principal</option>
+              <option value="System Admin">System Admin</option>
+            </select>
+            <label><input type="checkbox" id="tIsAdmin"> Make Admin</label>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <button onclick="saveTeacher()" id="btnSaveTeacher">Save</button>
+              <button class="btn-back" onclick="resetTeacherForm()">Cancel</button>
+            </div>
+            <p id="adminMsgT" style="margin-top:10px; min-height:18px;"></p>
+          </div>
+          <div class="content-box admin-only">
+            <h4>Firebase Security Sync</h4>
+            <button onclick="bulkCreateAuthAccounts()">Sync Auth</button>
+          </div>
+          <div class="content-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+              <input type="text" id="filterTeacher" placeholder="Find Teacher..." style="margin:0; max-width:300px;">
+              <button class="btn-back" id="btnRearrangeRange"><span class="material-symbols-outlined">format_list_numbered</span> Rearrange Range</button>
+            </div>
+            <div class="table-container">
+              <table class="ui-data-table" id="secTeachers"><thead><tr><th>No</th><th>NIC</th><th>Name</th><th>Job Level</th><th>Actions</th></tr></thead><tbody id="teachersTbody"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- CLASSES -->
+        <section id="secClasses" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Class Management</h3>
+          <div class="content-box" id="addClassForm" style="display:none;">
+            <input type="text" id="cName" placeholder="Class Name" class="uppercase-input">
+            <select id="cGrade">
+              <option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 9">Grade 9</option>
+              <option value="Grade 10">Grade 10</option><option value="Grade 11">Grade 11</option>
+              <option value="Grade 12 ART">Grade 12 ART</option><option value="Grade 12 BIOLOGY">Grade 12 BIOLOGY</option><option value="Grade 12 MATHS">Grade 12 MATHS</option>
+              <option value="Grade 12 COMMERCE">Grade 12 COMMERCE</option><option value="Grade 12 TECHNOLOGY">Grade 12 TECHNOLOGY</option>
+              <option value="Grade 13 ART">Grade 13 ART</option><option value="Grade 13 BIOLOGY">Grade 13 BIOLOGY</option><option value="Grade 13 MATHS">Grade 13 MATHS</option>
+              <option value="Grade 13 COMMERCE">Grade 13 COMMERCE</option><option value="Grade 13 TECHNOLOGY">Grade 13 TECHNOLOGY</option>
+            </select>
+            <select id="cTeacher"></select>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <button onclick="saveClass()" id="btnSaveClass">Save</button>
+              <button class="btn-back" onclick="resetClassForm()">Cancel</button>
+            </div>
+            <p id="adminMsgCls" style="margin-top:10px; min-height:18px;"></p>
+          </div>
+          <div class="content-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+              <input type="text" id="filterClassInput" placeholder="Find Class..." style="margin:0; max-width:300px;">
+              <button class="btn-back" id="btnAddClass" onclick="showAddClassForm()"><span class="material-symbols-outlined">add</span> Add Class</button>
+            </div>
+            <div class="table-container">
+              <table class="ui-data-table" id="classesTable"><thead><tr><th>Class Name</th><th>Grade / Stream</th><th>Class Teacher</th><th>Actions</th></tr></thead><tbody id="classesTbody"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUBJECTS -->
+        <section id="secSubjects" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Subject Management</h3>
+          <div class="content-box" id="addSubjectForm" style="display:none;">
+            <input type="text" id="subName" placeholder="Subject Name">
+            <input type="text" id="subCode" placeholder="Subject Code" class="uppercase-input">
+            <select id="subGradeType" onchange="toggleSubjectBasket()">
+              <option value="ol_main">O/L Main Subject</option><option value="ol_basket">O/L Basket Subject</option>
+              <option value="al_main">A/L Main Subject</option><option value="al_basket">A/L Basket Subject</option>
+              <option value="al_general">A/L General Subject</option>
+            </select>
+            <div id="subBasketDiv" style="display:none;">
+              <input type="text" id="subBasketName" placeholder="Category / Bucket Name">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <button onclick="saveSubject()" id="btnSaveSubject">Save</button>
+              <button class="btn-back" onclick="resetSubjectForm()">Cancel</button>
+            </div>
+            <p id="adminMsgSub" style="margin-top:10px; min-height:18px;"></p>
+          </div>
+          <div class="content-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+              <input type="text" id="filterSubject" placeholder="Find Subject..." style="margin:0; max-width:300px;">
+              <button class="btn-back" id="btnAddSubject" onclick="showAddSubjectForm()">Add Subject</button>
+            </div>
+            <div class="table-container">
+              <table class="ui-data-table" id="subjectsTable"><thead><tr><th>Name</th><th>Code</th><th>Type</th><th>Actions</th></tr></thead><tbody id="subjectsTbody"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section id="secStudents" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Student Management</h3>
+          <div class="content-box" id="studentAddBox" style="display:none;">
+            <input type="text" id="sAdmNo" placeholder="Admission Number" onkeyup="checkStudentAdmNo()">
+            <span id="sAdmNoWarning" class="val-warning">Number is already used!</span>
+            <input type="text" id="sName" placeholder="Student Full Name">
+            <select id="sClass"></select>
+            <select id="sGender"><option value="Male">Male</option><option value="Female">Female</option></select>
+            <input type="text" id="sContact" placeholder="Contact No (Optional)">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <button onclick="saveStudent()" id="btnSaveStudent">Save</button>
+              <button class="btn-back" onclick="resetStudentForm()">Cancel</button>
+            </div>
+            <p id="adminMsgS" style="margin-top:10px; min-height:18px;"></p>
+          </div>
+          <div class="content-box">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+              <select id="studentClassFilter" onchange="loadStudentsByClass()"></select>
+              <input type="text" id="filterStudentInput" placeholder="Find in Class..." style="margin:0; flex:1; max-width:300px;">
+              <button class="btn-back" id="btnAddStudent" onclick="document.getElementById('studentAddBox').style.display='block'">Add Student</button>
+            </div>
+            <div class="table-container">
+              <table class="ui-data-table"><thead><tr><th>Adm. No</th><th>Name</th><th>Class</th><th>Gender</th><th>Actions</th></tr></thead><tbody id="studentsTbody"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- MARKS ENTRY -->
+        <section id="secMarks" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Enter Marks</h3>
+          <div class="content-box">
+            <div class="flex-row">
+              <select id="yearSelect" class="dynamic-years"></select>
+              <select id="termSelect"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select>
+              <select id="marksClassSelect"></select>
+              <select id="marksSubjectSelect"></select>
+            </div>
+            <button onclick="loadStudentsToMark()" style="width:100%; margin-top:15px;">Load Student List</button>
+          </div>
+          <div id="studentListContainer"></div>
+        </section>
+
+        <!-- PROGRESS -->
+        <section id="secProgress" class="section-box">
+          <button class="btn-back" onclick="switchSection('secDashboard')"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+          <h3 class="section-title">Student Progress</h3>
+          <div class="content-box">
+            <div class="flex-row">
+              <select id="progClassFilter" onchange="updateProgressStudentList()"></select>
+              <div style="position:relative; flex:1;">
+                <input type="text" id="progAdmNo" placeholder="Student Admission No..." onkeyup="showStudentSuggestions(this.value)">
+                <div id="progSuggestions" class="autocomplete-items"></div>
+              </div>
+              <button onclick="loadStudentProgress()">View Progress</button>
+            </div>
+          </div>
+          <div id="progressProfile" style="display:none;">
+            <h2 id="progStName" style="margin:20px 0;"></h2>
+            <div class="content-box"><canvas id="progChartLatest" style="max-height:300px;"></canvas><button class="btn-back" onclick="toggleChartVisibility('progChartLatest', this)">Hide Chart</button></div>
+            <div class="content-box"><canvas id="progChartHistory" style="max-height:300px;"></canvas><button class="btn-back" onclick="toggleChartVisibility('progChartHistory', this)">Hide Chart</button></div>
+            <div id="progTableContainer"></div>
+          </div>
+        </section>
+
+        <!-- REPORTS -->
+        <section id="secReports" class="section-box">
+          <div id="reportSelectionView">
+            <h3 class="section-title">Reports Center</h3>
+            <div class="main-reports-row">
+              <div class="report-card" onclick="openReportConfig('class_master')"><span class="material-symbols-outlined">table_chart</span><h4>Class Master Sheet</h4><p>All marks for one class</p></div>
+              <div class="report-card" onclick="openReportConfig('class_student_list')"><span class="material-symbols-outlined">group</span><h4>Class Student List</h4><p>Students list with details</p></div>
+              <div class="report-card" onclick="openReportConfig('individual_cards')"><span class="material-symbols-outlined">contact_page</span><h4>Report Cards</h4><p>Cards for parents to see</p></div>
+              <div class="report-card" onclick="openReportConfig('subject_list')"><span class="material-symbols-outlined">assignment</span><h4>Subject Marks</h4><p>Marks for just one subject</p></div>
+              <div class="report-card" onclick="openReportConfig('top_achievers')"><span class="material-symbols-outlined">workspace_premium</span><h4>Top Students (Class)</h4><p>Best students in a class</p></div>
+              <div class="report-card" onclick="openReportConfig('top_achievers_section')"><span class="material-symbols-outlined">social_leaderboard</span><h4>Grade Top Students</h4><p>Best students in grade</p></div>
+            </div>
+            <div class="report-grid">
+              <div class="report-card" onclick="openReportConfig('class_analytics')"><span class="material-symbols-outlined">pie_chart</span><h4>Class Charts</h4><p>Charts to see performance</p></div>
+              <div class="report-card" onclick="openReportConfig('remedial_action_class')"><span class="material-symbols-outlined">healing</span><h4>Remedial Report (Class)</h4><p>Weak students in class</p></div>
+              <div class="report-card" onclick="openReportConfig('remedial_action_grade')"><span class="material-symbols-outlined">local_hospital</span><h4>Remedial Report (Grade)</h4><p>Weak students in grade</p></div>
+              <div class="report-card" onclick="openReportConfig('passes_summary_class')"><span class="material-symbols-outlined">checklist</span><h4>Pass Summary (Class)</h4><p>Students group by passes</p></div>
+              <div class="report-card" onclick="openReportConfig('passes_summary_section')"><span class="material-symbols-outlined">format_list_numbered</span><h4>Pass Summary (Grade)</h4><p>Grade group by passes</p></div>
+              <div class="report-card" onclick="openReportConfig('prediction_report')"><span class="material-symbols-outlined">online_prediction</span><h4>O/L AI Prediction</h4><p>Guess O/L marks</p></div>
+              <div class="report-card" onclick="openReportConfig('al_prediction_report')"><span class="material-symbols-outlined">psychology</span><h4>A/L AI Prediction</h4><p>Guess A/L marks & advice</p></div>
+            </div>
+          </div>
+          <div id="reportConfigPanel" style="display:none;">
+            <button class="btn-back" onclick="closeReportConfig()">Close</button>
+            <h3 id="configTitle" style="margin:20px 0 30px 0;">Report Settings</h3>
+            <div class="content-box">
+              <div id="configYearDiv"><label>Year:</label><select id="repYear" class="dynamic-years"></select></div>
+              <div id="configTermDiv"><label>Term:</label><select id="repTerm"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></div>
+              <div id="configClassDiv"><label>Class:</label><select id="repClass"></select></div>
+              <div id="configGradeDiv" style="display:none;"><label>Grade / Section:</label><select id="repGrade"></select></div>
+              <div id="configSubjectDiv" style="display:none;"><label>Subject:</label><select id="repSubject"></select></div>
+              <button id="btnGenerateReport" style="width:100%; margin-top:20px;">Generate Report</button>
+            </div>
+          </div>
+          <div id="reportOutputContainer" style="display:none;">
+            <div id="reportHtmlContainer"></div>
+          </div>
+          <div id="analyticsPreview" style="display:none;">
+            <h3 style="margin:30px 0 15px 0;">Class Analytics</h3>
+            <div class="content-box"><canvas id="passComboChart"></canvas><input type="text" id="passComboSearch" placeholder="Search Pass Combo..." onkeyup="filterPassComboChart()" style="margin-top:15px;"></div>
+            <div class="content-box">
+              <h4>Compare with First Rankers</h4>
+              <div style="position:relative; max-width:300px; margin-bottom:15px;">
+                <input type="text" id="compareSearchInput" placeholder="Type student name..." onkeyup="filterCompareSuggestions(this.value)">
+                <div id="compareSuggestions" class="autocomplete-items"></div>
+              </div>
+              <canvas id="compareChart"></canvas>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
-</div>
+  </div>
+
+  <!-- External Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="script.js"></script>
 </body>
 </html>
