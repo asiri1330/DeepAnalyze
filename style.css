@@ -163,33 +163,63 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-.dash-banner { 
-  background: var(--surface); 
-  padding: 25px 30px; 
-  border-radius: 16px; 
-  border: 1px solid var(--border-color); 
-  display: flex; 
-  align-items: center; 
-  gap: 20px; 
-  margin-bottom: 25px; 
-  box-shadow: var(--shadow);
+/* ==========================================
+   FIXED: Welcome Banner Layout Fix
+   ========================================== */
+.dash-banner {
+    background: var(--surface);
+    padding: 25px 30px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    display: flex;             /* Flexbox enable කරයි */
+    align-items: center;       /* ලම්බකව මැදට ගනී */
+    gap: 20px;                 /* Icon සහ Text අතර ඉඩ 20px */
+    margin-bottom: 25px;
+    box-shadow: var(--shadow);
+    width: 100%;               /* සම්පූර්ණ පළල භාවිතා කරයි */
+    box-sizing: border-box;    /* Padding එක පළලට ඇතුළත් කරයි */
+    position: relative;        /* Z-index නිවැරදිව ක්‍රියා කිරීමට */
 }
 
-.dash-banner-icon { 
-  width: 70px; 
-  height: 70px; 
-  background: #eff6ff; 
-  border-radius: 50%; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  color: var(--primary); 
-  border: 2px solid #bfdbfe; 
-  flex-shrink: 0;
+.dash-banner-icon {
+    width: 70px;
+    height: 70px;
+    background: #eff6ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    border: 2px solid #bfdbfe;
+    flex-shrink: 0;            /* Icon එක කුඩා නොවන බවට වග බලා ගනී */
+    z-index: 2;                /* Icon එක පෙරට ගනී */
+    position: relative;
 }
 
-.dash-banner h1 { margin: 0 0 5px 0; font-size: 24px; color: var(--text-main); font-weight: 800; }
-.dash-banner p { margin: 0; color: var(--text-muted); font-size: 14px; font-weight: 500; line-height: 1.5; }
+/* Text Container එක (h1 සහ p අඩංගු කොටස) සඳහා විශේෂ නීති */
+.dash-banner > div:last-child {
+    flex: 1;                   /* ඉතිරි ඉඩ පූර්ණයෙන් ගනී */
+    min-width: 0;              /* Text එක කොටුවෙන් පිටතට නොයාමට (ප්‍රධාන විසඳුම) */
+    overflow: hidden;          /* අනවශ්‍ය කොටස් සඟවයි */
+}
+
+.dash-banner h1 {
+    margin: 0 0 5px 0;
+    font-size: 24px;
+    color: var(--text-main);
+    font-weight: 800;
+    white-space: nowrap;       /* පේළි මාරු නොකර එක පේළියක තබයි */
+    overflow: hidden;
+    text-overflow: ellipsis;   /* ඉඩ හිඟ නම් "..." පෙන්වයි */
+}
+
+.dash-banner p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+}
 
 .stat-grid { 
   display: grid; 
