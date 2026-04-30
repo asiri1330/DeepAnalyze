@@ -82,37 +82,33 @@
         });
     };
 
-    async function fetchWithCache(path, forceRefresh = false) {
-        const cacheKey = 'elite_cache_' + path.replace(/\//g, '_');
-        
-        if (!forceRefresh) {
-            if (memoryCache[cacheKey]) return memoryCache[cacheKey]; 
-
-            try {
-                const cachedItem = await getFromIDB(cacheKey);
-                if (cachedItem && (Date.now() - cachedItem.time) < CACHE_TIME) {
-                    memoryCache[cacheKey] = cachedItem.data; 
-                    return cachedItem.data;
-                }
-            } catch (e) { console.warn("IndexedDB read error:", e); }
-        }
-        
-        const data = await apiCall(path);
-        if (data) {
-            memoryCache[cacheKey] = data; 
-            
-            const saveIDB = async () => {
-             try { await saveToIDB(cacheKey, data, Date.now()); } 
-             catch(e) { console.warn("IndexedDB save error:", e); }
-            };
-         if ('requestIdleCallback' in window) {
-          requestIdleCallback(saveIDB, { timeout: 2000 });
-         } else {
-          setTimeout(saveIDB, 100);
-         }
-        }
-        return data;
+    // 🔧 වැඩිදියුණු කළ fetchWithCache (Batch Save + TTL Management)
+async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
+    const cacheKey = 'elite_cache_' + path.replace(/\//g, '_');
+    if (!forceRefresh) {
+        if (memoryCache[cacheKey]) return memoryCache[cacheKey];
+        try {
+            const cachedItem = await getFromIDB(cacheKey);
+            if (cachedItem && (Date.now() - cachedItem.time) < ttl) {
+                memoryCache[cacheKey] = cachedItem.data;
+                return cachedItem.data;
+            }
+        } catch (e) { console.warn("IDB read error:", e); }
     }
+
+    const data = await apiCall(path);
+    if (data) {
+        memoryCache[cacheKey] = data;
+        // ✅ Background save (තවදුරටත් ස්ථාවරයි)
+        const saveIDB = async () => {
+            try { await saveToIDB(cacheKey, data, Date.now()); }
+            catch(e) { console.warn("IDB save error:", e); }
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(saveIDB, { timeout: 2000 });
+        else setTimeout(saveIDB, 100);
+    }
+    return data;
+}
 
     // --- Debouncing ශ්‍රිතය ---
     function debounce(func, wait) {
@@ -460,6 +456,11 @@
     if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
     if(secId === 'secReports') closeReportConfig(); 
     if(secId === 'secClasses') filterClasses(); if(secId === 'secSubjects') filterSubjects(); if(secId === 'secTeachers') filterTeachers(); if(secId === 'secStudents') filterStudents();
+        // ✅ Memory ඉතිරි කිරීම: Section මාරු වන විට පරණ Charts මැකීම
+    [studentMarksChartInstance, passComboChartInstance, progChartLatest, progChartHistory, compareChartInstance, remedialChartInstance].forEach(c => safeDestroyChart(c));
+    
+    // ✅ තාවකාලික දත්ත හිස් කිරීම (අවශ්‍ය නම් පමණි)
+    // window.currentAnalyticsData = null; 
   }
   
   window.logout = async function() { 
@@ -634,55 +635,34 @@
     window.checkTeacherNIC = function() { if(editingTeacher) return; let inputEl = document.getElementById('tNIC'); inputEl.value = inputEl.value.toUpperCase(); let val = inputEl.value.trim(); let warn = document.getElementById('tNICWarning'); warn.style.display = (val && allTeachersData[val]) ? 'block' : 'none'; }
   
     window.filterTeachers = debounce(function() {
-        let filterVal = document.getElementById('filterTeacher').value.trim().toLowerCase(); 
-        let tbody = document.getElementById('teachersTbody'); 
-        let keys = Object.keys(allTeachersData);
-        
-        let filteredKeys = keys.filter(k => { 
-            let t = allTeachersData[k]; 
-            return k.toLowerCase().includes(filterVal) || (t.name || "").toLowerCase().includes(filterVal) || (t.empNo || "").toLowerCase().includes(filterVal); 
-        });
-
-        // "No" (Emp No) එක අනුව කුඩා අගයේ සිට විශාල අගයට පෙළගැස්වීම
-        filteredKeys.sort((a, b) => {
-            let empA = parseInt(allTeachersData[a].empNo);
-            let empB = parseInt(allTeachersData[b].empNo);
-            
-            // යම් ගුරුවරයෙකුට අංකයක් ලබා දී නැත්නම් හෝ එය අකුරක් නම්, ඔවුන්ව ලැයිස්තුවේ අගට යවයි
-            if (isNaN(empA)) empA = 999999;
-            if (isNaN(empB)) empB = 999999;
-            
-            return empA - empB;
-        });
-
-        filteredKeys = filteredKeys.slice(0, 50); 
-        
-        if(filteredKeys.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No teachers found</td></tr>`;
-       
-        let actionTh = document.querySelector('#secTeachers table th:last-child');
-        if(actionTh) actionTh.style.display = window.perms.editTeachers ? '' : 'none';
-
-        let tableData = "";
-        filteredKeys.forEach(key => { 
-            let t = allTeachersData[key]; 
+    let filterVal = document.getElementById('filterTeacher').value.trim().toLowerCase();
+    let tbody = document.getElementById('teachersTbody');
+    let keys = Object.keys(allTeachersData);
+    
+    // ✅ වේගවත් Array Building
+    let rows = [];
+    let count = 0;
+    
+    for(let i=0; i<keys.length && count<50; i++) {
+        let k = keys[i];
+        let t = allTeachersData[k];
+        let match = k.toLowerCase().includes(filterVal) || (t.name||"").toLowerCase().includes(filterVal) || (t.empNo||"").toLowerCase().includes(filterVal);
+        if(match) {
+            let emp = parseInt(t.empNo) || 999999;
             let rBadge = t.isAdmin ? `<span class="badge badge-red" style="margin:0;">ADMIN</span>` : "";
-            let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${key}','${t.name}')" title="Reset Password"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${key}','${t.name.replace(/'/g, "\\'")}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${key}','${t.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : ''; 
-            
-            tableData += `<tr>
-                              <td style="font-weight:700;">${t.empNo || '-'}</td>
-                              <td>${key}</td>
-                              <td style="font-weight:800; color:var(--text-main);">${t.name}</td>
-                              <td>
-                                  <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
-                                      <span class="badge badge-gray" style="margin:0;">${t.role}</span>
-                                      ${rBadge}
-                                  </div>
-                              </td>
-                              ${btnHtml}
-                          </tr>`; 
-        });
-        tbody.innerHTML = tableData;
-    }, 400);
+            let btnHtml = window.perms.editTeachers ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="adminResetPassword('${k}','${t.name.replace(/'/g, "\\'")}')"><span class="material-symbols-outlined icon-small">key</span></button> <button class="btn-action btn-small" onclick="editTeacher('${k}','${t.name.replace(/'/g, "\\'")}','${t.role}','${t.empNo||''}','${t.isAdmin||false}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteTeacher('${k}','${t.name.replace(/'/g, "\\'")}')"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : '';
+            rows.push(`<tr data-emp="${emp}"><td style="font-weight:700;">${t.empNo || '-'}</td><td>${k}</td><td style="font-weight:800; color:var(--text-main);">${t.name}</td><td><div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;"><span class="badge badge-gray" style="margin:0;">${t.role}</span>${rBadge}</div></td>${btnHtml}</tr>`);
+            count++;
+        }
+    }
+    
+    if(rows.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No teachers found</td></tr>`;
+    
+    // ✅ Emp No අනුව Sort කිරීම (ලූප් එකකින් පසුව)
+    rows.sort((a, b) => parseInt(a.match(/data-emp="(\d+)"/)[1]) - parseInt(b.match(/data-emp="(\d+)"/)[1]));
+    
+    tbody.innerHTML = rows.join('');
+}, 400);
 
   // --- ලබාදෙන අංක පරාසයක (Range) ගුරුවරුන්ගේ අංක පමණක් නැවත සැකසීම ---
   window.rearrangeTeacherRange = async function() {
@@ -824,65 +804,49 @@
       }
   };
 
-  // යාවත්කාලීන කළ ශ්‍රිතය: Load වූ පන්තියේ සිසුන් අතරින් Search කිරීම
   window.filterStudents = debounce(function() {
-      let cls = document.getElementById('studentClassFilter').value;
-      let filterVal = document.getElementById('filterStudentInput').value.trim().toLowerCase();
-      let tbody = document.getElementById('studentsTbody');
-      
-      if(!cls && Object.keys(allStudentsData).length === 0) {
-          return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px; font-weight:600; color:var(--text-muted);'>Please select a class to view students.</td></tr>`;
-      }
-
-      let keys = Object.keys(allStudentsData);
-      
-      let filteredKeys = keys.filter(k => { 
-          let s = allStudentsData[k]; 
-          return k.toLowerCase().includes(filterVal) || 
-                 (s.name||"").toLowerCase().includes(filterVal) || 
-                 (s.class||"").toLowerCase().includes(filterVal); 
-      });
-
-      if(filterVal === "" && filteredKeys.length > 50) {
-          filteredKeys = filteredKeys.slice(0, 50); 
-      }
-        
-      filteredKeys.sort((a,b) => { let sA = allStudentsData[a]; let sB = allStudentsData[b]; let gA = sA.gender === 'Female' ? 1 : 0; let gB = sB.gender === 'Female' ? 1 : 0; if(gA !== gB) return gA - gB; return a.localeCompare(b, undefined, {numeric: true}); });
-
-      if(filteredKeys.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No students found</td></tr>`; 
-        
-      let role = currentUser ? (currentUser.role ? currentUser.role.toLowerCase() : "") : "";
-      let isCT = role === "class teacher" || role === "assistant class teacher";
-      let isSysAdmin = currentUser && (currentUser.isAdmin === true || currentUser.isAdmin === "true" || role.includes("system admin") || currentUser.isSetupMode);
-
-      let actionTh = document.querySelector('#secStudents table th:last-child');
-      if(actionTh) actionTh.style.display = window.perms.editStudents ? '' : 'none';
-
-      let tableData = "";
-      filteredKeys.forEach(key => { 
-          let s = allStudentsData[key]; 
-          let canEditThis = false;
-          if (window.perms.editStudents) {
-              if (isSysAdmin || (!isCT && window.perms.editStudents)) { 
-                  canEditThis = true;
-              } else if (isCT && s.class === window.assignedClass) {
-                  canEditThis = true;
-              }
-          }
-
-          let btnHtml = '';
-          if(window.perms.editStudents) {
-              if(canEditThis) {
-                btnHtml = `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editStudent('${key}', '${s.name.replace(/'/g, "\\'")}', '${s.class}', '${s.gender}', '${s.contact || ''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteStudent('${key}', '${s.name.replace(/'/g, "\\'")}')" style="color:var(--danger);"><span class="material-symbols-outlined icon-small">delete</span></button></td>`;
-              } else {
-                btnHtml = `<td></td>`;
-              }
-          }
-          
-          tableData += `<tr><td style="font-weight:700;">${key}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td><span class="badge badge-gray">${s.class}</span></td><td><span class="badge badge-blue">${s.gender || 'Male'}</span></td>${btnHtml}</tr>`; 
-      });
-      tbody.innerHTML = tableData;
-  }, 400);
+    let cls = document.getElementById('studentClassFilter').value;
+    let filterVal = document.getElementById('filterStudentInput').value.trim().toLowerCase();
+    let tbody = document.getElementById('studentsTbody');
+    
+    if(!cls && Object.keys(allStudentsData).length === 0) {
+        return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px; font-weight:600; color:var(--text-muted);'>Please select a class to view students.</td></tr>`;
+    }
+    
+    let keys = Object.keys(allStudentsData);
+    let rows = [];
+    let count = 0;
+    let isCT = currentUser?.role?.toLowerCase().includes("class teacher");
+    let canEditGlobal = window.perms?.editStudents && !isCT;
+    
+    for(let i=0; i<keys.length && count<50; i++) {
+        let k = keys[i];
+        let s = allStudentsData[k];
+        let match = k.toLowerCase().includes(filterVal) || (s.name||"").toLowerCase().includes(filterVal) || (s.class||"").toLowerCase().includes(filterVal);
+        if(match) {
+            let gVal = s.gender === 'Female' ? 1 : 0;
+            let canEdit = canEditGlobal || (isCT && s.class === window.assignedClass);
+            let btnHtml = '';
+            if(window.perms?.editStudents) {
+                btnHtml = canEdit ? `<td style="text-align:center; white-space:nowrap;"><button class="btn-action btn-small" onclick="editStudent('${k}','${s.name.replace(/'/g, "\\'")}','${s.class}','${s.gender}','${s.contact||''}')"><span class="material-symbols-outlined icon-small">edit</span></button> <button class="btn-action btn-small" onclick="deleteStudent('${k}','${s.name.replace(/'/g, "\\'")}')"><span class="material-symbols-outlined icon-small">delete</span></button></td>` : `<td></td>`;
+            }
+            rows.push(`<tr data-g="${gVal}"><td style="font-weight:700;">${k}</td><td style="font-weight:800; color:var(--text-main);">${s.name}</td><td><span class="badge badge-gray">${s.class}</span></td><td><span class="badge badge-blue">${s.gender||'Male'}</span></td>${btnHtml}</tr>`);
+            count++;
+        }
+    }
+    
+    if(rows.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No students found</td></tr>`;
+    
+    // ✅ එකවර Sort කිරීම (Gender → Adm No)
+    rows.sort((a, b) => {
+        let gA = parseInt(a.match(/data-g="(\d)"/)[1]);
+        let gB = parseInt(b.match(/data-g="(\d)"/)[1]);
+        if(gA !== gB) return gA - gB;
+        return a.localeCompare(b, undefined, {numeric: true});
+    });
+    
+    tbody.innerHTML = rows.join('');
+}, 400);
   
   window.saveStudent = async function() {
     let admNo = document.getElementById('sAdmNo').value.trim(), name = document.getElementById('sName').value.trim(), cls = document.getElementById('sClass').value, gender = document.getElementById('sGender').value, contact = document.getElementById('sContact').value.trim(), msg = document.getElementById('adminMsgS');
@@ -2701,7 +2665,15 @@ async function generateClassMasterReport() {
       });
 
       let ctx = document.getElementById('compareChart').getContext('2d');
-      compareChartInstance = safeDestroyChart(compareChartInstance);
+      if (compareChartInstance && compareChartInstance.data && compareChartInstance.data.labels.length === labels.length) {
+    compareChartInstance.data.labels = labels;
+    compareChartInstance.data.datasets[0].data = sData;
+    compareChartInstance.data.datasets[1].data = cData;
+    compareChartInstance.data.datasets[2].data = secData;
+    compareChartInstance.update('none'); // ✅ Destroy නොකර වේගයෙන් Update කිරීම
+    return;
+      }
+      compareChartInstance = safeDestroyChart(compareChartInstance); // ✅ අලුත් නම් පමණක් සාදයි
 
       compareChartInstance = new Chart(ctx, {
           type: 'bar',
