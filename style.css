@@ -370,7 +370,8 @@ select {
   -webkit-appearance: none; 
   -moz-appearance: none; 
   appearance: none; 
-  background-image: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%2364748b"/></svg>'); 
+  /* පහත පේළියේ ආරම්භයට 'data:' යන්න එක් කර ඇත */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%2364748b"/></svg>'); 
   background-repeat: no-repeat; 
   background-position: right 14px top 50%; 
   background-size: 20px; 
