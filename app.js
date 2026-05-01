@@ -3310,18 +3310,27 @@ window.exportReportToCSV = function() {
         });
     }
     
-    let d = new Date();
-    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
-    let safeClassName = (data.cls || data.targetName || data.target || data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
-    let fileName = `${data.type || 'Export'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}.csv`;
-    
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // --- පැරණි කේතයේ අවසන් පේළි කිහිපය වෙනුවට මෙය යොදන්න ---
+    let d = new Date();
+    let timeString = d.getHours() + "" + d.getMinutes() + "" + d.getSeconds(); 
+    let safeClassName = (data.cls || data.targetName || data.target || data.class || data.className || data.grade || 'Report').replace(/\s+/g, '_');
+    let fileName = `${data.type || 'Export'}_${safeClassName}_${data.year || d.getFullYear()}_${data.term || 'Term'}_${timeString}.csv`;
+    
+    // නව Blob තාක්ෂණය (Large Data & Sinhala Unicode Support)
+    let cleanCsvContent = csvContent.replace("data:text/csv;charset=utf-8,", "");
+    let blob = new Blob(["\uFEFF" + cleanCsvContent], { type: 'text/csv;charset=utf-8;' }); 
+    let url = URL.createObjectURL(blob);
+    
+    let link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    
+    // Memory නිදහස් කිරීම
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+}
 }
 
 })();
