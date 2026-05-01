@@ -127,34 +127,49 @@ body {
   width: 100%;
 }
 
-.topbar { 
-  background: var(--surface); 
-  height: 65px; 
-  display: flex; 
-  align-items: center;       /* ✅ Fixed: Removed space */
-  justify-content: space-between; 
-  padding: 0 30px; 
-  border-bottom: 1px solid var(--border-color); 
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.03); 
-  z-index: 50;
-}
-
-.topbar h2 { 
-  margin: 0; 
-  font-size: 22px; 
-  color: var(--text-main); 
-  font-weight: 800; 
-  letter-spacing: -0.5px;
-}
-
-.user-profile { 
-  display: flex; 
-  align-items: center; 
-  gap: 15px; 
-  font-size: 14px; 
-  font-weight: 600;          /* ✅ Fixed: Removed space */
-  color: var(--text-muted); 
-}
+/* 2. Top Navigation Bar (ඉහළ තීරුව) */
+      .topbar { 
+          padding: 0 10px; 
+          justify-content: space-between; 
+          gap: 8px; 
+      }
+      .topbar > div:first-child { 
+          display: flex;
+          align-items: center;
+          flex: 1; 
+          min-width: 0; 
+          gap: 8px !important; 
+      }
+      .mobile-menu-btn { 
+          display: block; 
+          margin-right: 5px; 
+          flex-shrink: 0; /* Menu අයිකනය කුඩා වීම/මිරිකීම වළක්වයි */
+      }
+      .topbar h2 { 
+          font-size: 16px; 
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis; 
+      }
+      .user-profile { 
+          margin-left: auto; 
+          font-size: 11px; 
+          flex-shrink: 1; /* ඉඩ මදි වූ විට Profile එකට කුඩා වීමට ඉඩදීම */
+          max-width: 60%; /* Profile එකට ලබාදෙන උපරිම ඉඩ සීමා කිරීම */
+          gap: 5px; 
+          text-align: right; 
+          justify-content: flex-end; 
+          overflow-x: auto; /* අකුරු කැපීම වෙනුවට Smooth ලෙස Scroll වීමට සැලැස්වීම */
+          white-space: nowrap;
+          scrollbar-width: none; /* Firefox සඳහා Scrollbar එක සැඟවීම */
+      }
+      .user-profile::-webkit-scrollbar {
+          display: none; /* Chrome/Safari සඳහා Scrollbar එක සැඟවීම */
+      }
+      .user-profile .badge {
+          padding: 4px 8px;
+          font-size: 10px;
+      }
 
 .scroll-area { 
   flex: 1; 
