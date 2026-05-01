@@ -3346,10 +3346,9 @@ window.exportReportToCSV = function() {
     document.body.appendChild(link);
     link.click();
     
-    // Memory නිදහස් කිරීම
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-}
-}
+   // Memory නිදහස් කිරීම
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    } 
 
 })();
