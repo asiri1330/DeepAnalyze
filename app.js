@@ -337,9 +337,15 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
           }
       }
 
+      
+      const hour = new Date().getHours();
+      let greeting = 'Good Evening';
+      if (hour < 12) greeting = 'Good Morning';
+      else if (hour < 18) greeting = 'Good Afternoon';
+
       const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
       if(currentUser) { 
-          document.getElementById('dashWelcomeText').innerHTML = `Welcome back, <b>${currentUser.name}</b> • ${new Date().toLocaleDateString('en-US', dateOptions)}`; 
+          document.getElementById('dashWelcomeText').innerHTML = `${greeting}, <b>${currentUser.name}</b> • ${new Date().toLocaleDateString('en-US', dateOptions)}`; 
       }
   }
 
@@ -366,10 +372,18 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
       document.getElementById('repSubject').innerHTML = singleSelHTML;
   }
 
-  window.togglePwd = function(inputId, iconSpan) {
+ window.togglePwd = function(inputId, iconElement) {
     const input = document.getElementById(inputId);
-    if (input.type === "password") { input.type = "text"; iconSpan.innerHTML = '<span class="material-symbols-outlined icon-small" style="font-size:20px; color:var(--primary);">visibility_off</span>'; } 
-    else { input.type = "password"; iconSpan.innerHTML = '<span class="material-symbols-outlined icon-small" style="font-size:20px;">visibility</span>'; }
+    if (input.type === "password") { 
+        input.type = "text"; 
+        // අයිකනයේ නම පමණක් innerText හරහා වෙනස් කිරීම
+        iconElement.innerText = 'visibility'; 
+        iconElement.style.color = "var(--primary)"; 
+    } else { 
+        input.type = "password"; 
+        iconElement.innerText = 'visibility_off'; 
+        iconElement.style.color = "#94a3b8"; 
+    }
   }
 
   // ==========================================
