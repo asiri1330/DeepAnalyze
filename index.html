@@ -90,11 +90,18 @@
     <main class="main-content">
       <!-- Topbar -->
       <header class="topbar">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Toggle Menu">menu</button>
+        <!-- වම් පස කොටස (Menu Button & Page Title) -->
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Toggle Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
           <h2 id="pageTitle">Home</h2>
         </div>
-        <div id="topbarUser" class="user-profile">Loading...</div>
+
+        <!-- දකුණු පස කොටස (User Profile) -->
+        <div class="topbar-right">
+          <div id="topbarUser" class="user-profile">Loading...</div>
+        </div>
       </header>
 
       <!-- Scrollable Content Area -->
