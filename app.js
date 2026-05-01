@@ -125,7 +125,7 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     return null;
    }
 
-    // Fixed Hash Function to work on both Local file:// and HTTPS
+    // 1. නිවැරදි කළ hashData ශ්‍රිතය
     async function hashData(string) {
       try {
           if (window.crypto && window.crypto.subtle) {
@@ -134,7 +134,9 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
               const hashArray = Array.from(new Uint8Array(hashBuffer));
               return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('');
           }
-      } catch (e) { console.warn("crypto.subtle not available, falling back to CryptoJS"); }
+      } catch (e) { 
+          console.warn("crypto.subtle not available"); 
+      }
       
       if (typeof CryptoJS !== 'undefined') {
           return CryptoJS.SHA256(string).toString(CryptoJS.enc.Hex);
@@ -414,6 +416,7 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
   // ==========================================
   // LOGIN & AUTH (ප්‍රතිනිර්මාණය කළ ආරක්ෂිත ලොගින් පද්ධතිය)
   // ==========================================
+ // 2. දෝෂ නිරාකරණය කළ ආරක්ෂිත Login ශ්‍රිතය
   window.login = async function() {
     let nic = document.getElementById('nicInput').value.trim().toUpperCase();
     let pass = document.getElementById('passInput').value.trim();
@@ -426,7 +429,7 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     try {
       let loginEmail = nic + "@elite.edu";
       
-      // 1. Firebase Auth හරහා පමණක් ලොග් වීම තහවුරු කිරීම
+      // 1. Firebase Auth හරහා ලොග් වීම තහවුරු කිරීම
       await firebase.auth().signInWithEmailAndPassword(loginEmail, pass);
 
       // 2. Database එකෙන් පරිශීලක දත්ත ලබා ගැනීම
@@ -446,7 +449,10 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
       }
       
       // 4. දත්ත සමුදායේ ඇති Hash කළ මුරපදය පරීක්ෂා කිරීම
-      if(data.password === await hashData(pass)) {
+      let hashedInput = await hashData(pass);
+      
+      // (data.password === pass) යන්නෙන් කලින් Hash නොවී සේව් වූ පැරණි මුරපද සඳහාද සහය දක්වයි
+      if(data.password === hashedInput || data.password === pass) {
           grantAccess(data, nic); 
       } else { 
           msg.innerText = "Wrong password details."; 
@@ -454,9 +460,11 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
       }
       
     } catch(err) { 
-        msg.innerText = "Wrong ID/Password (or accounts not synced)."; 
+        // Firebase හි ඇති සැබෑ දෝෂය (Error) තිරයේ දිස්වීමට සැලැස්වීම
+        msg.innerText = "Login Failed: " + err.message; 
+        msg.style.color = "var(--danger)";
         btn.disabled = false; btn.innerHTML = 'Login'; 
-        console.error(err);
+        console.error("Login Error:", err);
     }
   }
 
