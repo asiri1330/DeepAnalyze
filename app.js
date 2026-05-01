@@ -163,6 +163,17 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     let currYear = new Date().getFullYear(); let yearHTML = "";
     for(let y = currYear - 1; y <= currYear + 5; y++) yearHTML += `<option value="${y}" ${y===currYear?'selected':''}>${y}</option>`; 
     document.querySelectorAll('.dynamic-years').forEach(sel => sel.innerHTML = yearHTML);
+
+    // --- නව කේතය: Enter යතුර මඟින් Login වීම ---
+    let passInput = document.getElementById('passInput');
+    if(passInput) {
+        passInput.addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') {
+                e.preventDefault();
+                login();
+            }
+        });
+    }
   };
 
   async function refreshGlobalCache(force = false) {
