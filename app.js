@@ -24,22 +24,48 @@
             temp.textContent = str; // මෙහිදී අනිෂ්ට HTML කේත සාමාන්‍ය අකුරු බවට පත් වේ (උදා: < යන්න &lt; බවට පත්වේ)
         return temp.innerHTML;
     };
-    // 3. Updated apiCall with Auth Token
+    // 3. Updated apiCall with Cloudflare URL Fix & Exact Error Reporting
     async function apiCall(path = '', method = 'GET', data = null, queryParams = '') {
-      let token = "";
-      const user = firebase.auth().currentUser;
-      if (user) {
-          token = await user.getIdToken();
-          // queryParams දැනටමත් '?' කින් පටන් ගෙන ඇත්නම් '&' යොදයි, නැත්නම් '?' යොදයි
-          let separator = queryParams.includes('?') ? '&' : '?';
-          queryParams = queryParams + `${separator}auth=${token}`;
-      }
-      
-      const url = `${DB_URL}/${path}.json${queryParams}`;
-      const options = { method: method };
-      if (data) { options.body = JSON.stringify(data); options.headers = { 'Content-Type': 'application/json' }; }
-      try { const response = await fetch(url, options); if (!response.ok) throw new Error("API Error or Access Denied"); return await response.json(); } 
-      catch (err) { console.error("Database error:", err); throw err; }
+        let token = "";
+        const user = firebase.auth().currentUser;
+        if (user) {
+            token = await user.getIdToken();
+            // URL එකට 'auth=' දෙවරක් එකතු වීම වැළැක්වීම
+            if (!queryParams.includes('auth=')) {
+                let separator = queryParams.includes('?') ? '&' : '?';
+                queryParams = queryParams + `${separator}auth=${token}`;
+            }
+        }
+
+        // Cloudflare / Firebase ගැටුම් වළක්වා ගැනීමට URL එකේ ඇති අමතර '/' ලකුණු ඉවත් කිරීම
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        const urlPath = cleanPath ? `/${cleanPath}.json` : `/.json`;
+        const url = `${DB_URL}${urlPath}${queryParams}`;
+
+        const options = { method: method };
+        if (data) { 
+            options.body = JSON.stringify(data); 
+            options.headers = { 'Content-Type': 'application/json' }; 
+        }
+
+        try { 
+            const response = await fetch(url, options); 
+            if (!response.ok) {
+                // සැබෑ Firebase දෝෂය (Permission Denied ද යන්න) තිරයේ පෙන්වීම
+                let errText = await response.text();
+                try {
+                    let errJson = JSON.parse(errText);
+                    throw new Error(errJson.error || "Permission Denied by Firebase Rules");
+                } catch(e) {
+                    throw new Error(errText || "API Error or Access Denied");
+                }
+            } 
+            return await response.json(); 
+        } 
+        catch (err) { 
+            console.error("Database error:", err); 
+            throw err; 
+        }
     }
 
     const CACHE_TIME = 1000 * 60 * 60 * 12; 
