@@ -693,18 +693,20 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
   }
     window.checkTeacherNIC = function() { if(editingTeacher) return; let inputEl = document.getElementById('tNIC'); inputEl.value = inputEl.value.toUpperCase(); let val = inputEl.value.trim(); let warn = document.getElementById('tNICWarning'); warn.style.display = (val && allTeachersData[val]) ? 'block' : 'none'; }
   
-    window.filterTeachers = debounce(function() {
+   window.filterTeachers = debounce(function() {
     let filterVal = document.getElementById('filterTeacher').value.trim().toLowerCase();
     let tbody = document.getElementById('teachersTbody');
     let keys = Object.keys(allTeachersData);
-    
-    // ✅ වේගවත් Array Building
     let rows = [];
     let count = 0;
     
     for(let i=0; i<keys.length && count<50; i++) {
         let k = keys[i];
         let t = allTeachersData[k];
+        
+        // 👉 මෙම පේළිය අනිවාර්යයෙන්ම එකතු කරන්න (null නම් මඟහැර යයි)
+        if (!t) continue; 
+        
         let match = k.toLowerCase().includes(filterVal) || (t.name||"").toLowerCase().includes(filterVal) || (t.empNo||"").toLowerCase().includes(filterVal);
         if(match) {
             let emp = parseInt(t.empNo) || 999999;
@@ -716,10 +718,7 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     }
     
     if(rows.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No teachers found</td></tr>`;
-    
-    // ✅ Emp No අනුව Sort කිරීම (ලූප් එකකින් පසුව)
     rows.sort((a, b) => parseInt(a.match(/data-emp="(\d+)"/)[1]) - parseInt(b.match(/data-emp="(\d+)"/)[1]));
-    
     tbody.innerHTML = rows.join('');
 }, 400);
 
@@ -851,10 +850,13 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
           allStudentsData = classStudents || {}; // Cache එකට අදාළ පන්තිය පමණක් යෙදීම
 
           // --- DATA CLEANING FIX FOR GENDER ---
-          Object.keys(allStudentsData).forEach(k => {
-              let g = (allStudentsData[k].gender || "Male").trim().toLowerCase();
-              allStudentsData[k].gender = (g === 'female' || g === 'girl' || g === 'f') ? 'Female' : 'Male';
-          });
+         Object.keys(allStudentsData).forEach(k => {
+          // 👉 මෙම පේළිය අනිවාර්යයෙන්ම එකතු කරන්න
+          if (!allStudentsData[k]) return; 
+          
+          let g = (allStudentsData[k].gender || "Male").trim().toLowerCase();
+          allStudentsData[k].gender = (g === 'female' || g === 'girl' || g === 'f') ? 'Female' : 'Male';
+      });
 
           filterStudents(); // දත්ත පැමිණි පසු Table එක Render කිරීම
       } catch (err) {
@@ -863,7 +865,7 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
       }
   };
 
-  window.filterStudents = debounce(function() {
+ window.filterStudents = debounce(function() {
     let cls = document.getElementById('studentClassFilter').value;
     let filterVal = document.getElementById('filterStudentInput').value.trim().toLowerCase();
     let tbody = document.getElementById('studentsTbody');
@@ -881,6 +883,10 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     for(let i=0; i<keys.length && count<50; i++) {
         let k = keys[i];
         let s = allStudentsData[k];
+        
+        // 👉 මෙම පේළිය අනිවාර්යයෙන්ම එකතු කරන්න
+        if (!s) continue; 
+        
         let match = k.toLowerCase().includes(filterVal) || (s.name||"").toLowerCase().includes(filterVal) || (s.class||"").toLowerCase().includes(filterVal);
         if(match) {
             let gVal = s.gender === 'Female' ? 1 : 0;
@@ -896,7 +902,6 @@ async function fetchWithCache(path, forceRefresh = false, ttl = CACHE_TIME) {
     
     if(rows.length === 0) return tbody.innerHTML = `<tr><td colspan='5' style='text-align:center; padding:20px;'>No students found</td></tr>`;
     
-    // ✅ එකවර Sort කිරීම (Gender → Adm No)
     rows.sort((a, b) => {
         let gA = parseInt(a.match(/data-g="(\d)"/)[1]);
         let gB = parseInt(b.match(/data-g="(\d)"/)[1]);
